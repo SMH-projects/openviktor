@@ -3,7 +3,7 @@ import { AppLayout } from "./components/layout/app-layout";
 import { HealthPage } from "./pages/health";
 import { IntegrationsPage } from "./pages/integrations";
 import { KnowledgePage } from "./pages/knowledge";
-import { LoginPage } from "./pages/login";
+import { LandingPage } from "./pages/landing";
 import { OverviewPage } from "./pages/overview";
 import { RunDetailPage } from "./pages/run-detail";
 import { RunsPage } from "./pages/runs";
@@ -17,9 +17,10 @@ import { UsagePage } from "./pages/usage";
 export function App() {
 	return (
 		<Routes>
-			<Route path="/login" element={<LoginPage />} />
+			<Route index element={<LandingPage />} />
+			<Route path="/welcome" element={<LandingPage />} />
 			<Route element={<AppLayout />}>
-				<Route index element={<HealthPage />} />
+				<Route path="dashboard" element={<HealthPage />} />
 				<Route path="overview" element={<OverviewPage />} />
 				<Route path="runs" element={<RunsPage />} />
 				<Route path="runs/:id" element={<RunDetailPage />} />

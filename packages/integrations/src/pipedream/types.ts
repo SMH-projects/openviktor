@@ -62,6 +62,19 @@ export interface PipedreamListAppsOptions {
 	q?: string;
 	hasActions?: boolean;
 	limit?: number;
+	after?: string;
+}
+
+export interface PipedreamPageInfo {
+	count: number;
+	total_count: number;
+	start_cursor: string | null;
+	end_cursor: string | null;
+}
+
+export interface PipedreamListAppsResult {
+	data: PipedreamApp[];
+	page_info: PipedreamPageInfo;
 }
 
 export interface PipedreamListActionsOptions {

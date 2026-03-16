@@ -36,7 +36,7 @@ const envSchema = z
 			.optional(),
 
 		// LLM
-		ANTHROPIC_API_KEY: z.string().min(1),
+		ANTHROPIC_API_KEY: z.string().min(1).optional(),
 		OPENAI_API_KEY: z.string().optional(),
 		GOOGLE_AI_API_KEY: z.string().optional(),
 		DEFAULT_MODEL: z.string().default("claude-sonnet-4-20250514"),
@@ -73,6 +73,9 @@ const envSchema = z
 		TOOL_BACKEND: z.enum(["local", "modal"]).default("local"),
 		MODAL_ENDPOINT_URL: z.string().url().optional(),
 		MODAL_AUTH_TOKEN: z.string().min(1).optional(),
+
+		// Global usage cap (managed mode) — hard stop across all workspaces
+		GLOBAL_MONTHLY_BUDGET_CENTS: z.coerce.number().int().default(5000), // $50 default
 
 		// Cron scheduler
 		CRON_CHECK_INTERVAL_MS: z.coerce.number().int().min(1000).default(30_000),
@@ -115,6 +118,30 @@ const envSchema = z
 				"SLACK_APP_TOKEN",
 				"SLACK_APP_TOKEN is required in selfhosted mode",
 			);
+			requireField(
+				ctx,
+				data.ANTHROPIC_API_KEY,
+				"ANTHROPIC_API_KEY",
+				"ANTHROPIC_API_KEY is required in selfhosted mode",
+			);
+		}
+
+		if (mode === "managed") {
+			const model = data.DEFAULT_MODEL;
+			if (model.startsWith("gemini-") && !data.GOOGLE_AI_API_KEY) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "GOOGLE_AI_API_KEY is required when DEFAULT_MODEL is a Gemini model",
+					path: ["GOOGLE_AI_API_KEY"],
+				});
+			}
+			if (model.startsWith("claude-") && !data.ANTHROPIC_API_KEY) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: "ANTHROPIC_API_KEY is required when DEFAULT_MODEL is a Claude model",
+					path: ["ANTHROPIC_API_KEY"],
+				});
+			}
 		}
 
 		if (mode === "managed") {

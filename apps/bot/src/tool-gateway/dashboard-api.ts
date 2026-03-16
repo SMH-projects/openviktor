@@ -5,6 +5,7 @@ import type { IntegrationWatcher } from "../integrations/watcher.js";
 import type { AuthContext } from "../middleware/auth.js";
 import { createAuthMiddleware } from "../middleware/auth.js";
 import type { ConnectionManager } from "../slack/connection-manager.js";
+import type { UsageLimiter } from "../usage/limiter.js";
 
 interface DashboardApiDeps {
 	config: EnvConfig;
@@ -13,6 +14,7 @@ interface DashboardApiDeps {
 	pdClient?: PipedreamClient;
 	integrationWatcher?: IntegrationWatcher;
 	disconnectApp?: (workspaceId: string, appSlug: string) => Promise<{ removed: string[] }>;
+	usageLimiter?: UsageLimiter;
 	logger: Logger;
 }
 
@@ -66,8 +68,16 @@ function getInitials(name: string): string {
 }
 
 export function createDashboardApi(deps: DashboardApiDeps) {
-	const { config, prisma, connectionManager, pdClient, integrationWatcher, disconnectApp, logger } =
-		deps;
+	const {
+		config,
+		prisma,
+		connectionManager,
+		pdClient,
+		integrationWatcher,
+		disconnectApp,
+		usageLimiter,
+		logger,
+	} = deps;
 	const auth = createAuthMiddleware({ config, prisma, logger });
 
 	async function getWorkspace(workspaceId?: string | null) {
@@ -113,6 +123,8 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	async function handleIntegrations(url: URL, workspaceId: string | null): Promise<Response> {
 		const workspace = await getWorkspace(workspaceId);
 		const search = url.searchParams.get("search") ?? "";
+		const after = url.searchParams.get("after") ?? undefined;
+		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 100));
 
 		const [accounts, toolDefs] = await Promise.all([
 			prisma.integrationAccount.findMany({
@@ -144,63 +156,47 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 			categories: string[];
 			provider: string;
 		};
-		const appsMap = new Map<string, AppInfo>();
 
+		// Fetch one page from Pipedream (cursor-based pagination)
+		let apps: AppInfo[] = [];
+		let endCursor: string | null = null;
+		let hasMore = false;
 		if (pdClient) {
-			const pdApps = await pdClient.listApps({
+			const result = await pdClient.listApps({
 				hasActions: true,
-				limit: 200,
+				limit,
+				after,
 				...(search ? { q: search } : {}),
 			});
-			for (const app of pdApps) {
-				appsMap.set(app.name_slug, {
-					slug: app.name_slug,
-					name: app.name,
-					description: app.description ?? "",
-					imgSrc: app.img_src,
-					categories: app.categories ?? [],
-					provider: "pipedream",
-				});
-			}
+			apps = result.data.map((app) => ({
+				slug: app.name_slug,
+				name: app.name,
+				description: app.description ?? "",
+				imgSrc: app.img_src,
+				categories: app.categories ?? [],
+				provider: "pipedream",
+			}));
+			endCursor = result.page_info.end_cursor;
+			hasMore = result.data.length === limit && endCursor !== null;
+		}
 
-			const missingSlugs = accounts
-				.filter((a) => a.provider === "pipedream" && !appsMap.has(a.appSlug))
-				.map((a) => a.appSlug);
-			if (missingSlugs.length > 0) {
-				const lookups = await Promise.all(
-					missingSlugs.map((slug) => pdClient.listApps({ q: slug, limit: 1 })),
-				);
-				for (const result of lookups) {
-					if (result.length > 0) {
-						const app = result[0];
-						appsMap.set(app.name_slug, {
-							slug: app.name_slug,
-							name: app.name,
-							description: app.description ?? "",
-							imgSrc: app.img_src,
-							categories: app.categories ?? [],
-							provider: "pipedream",
-						});
-					}
+		// Add connected apps not in current page (always show at top on first page)
+		if (!after) {
+			const appSlugs = new Set(apps.map((a) => a.slug));
+			for (const account of accounts) {
+				if (!appSlugs.has(account.appSlug)) {
+					apps.unshift({
+						slug: account.appSlug,
+						name: account.appName,
+						description: "",
+						categories: [],
+						provider: account.provider,
+					});
 				}
 			}
 		}
 
-		for (const account of accounts) {
-			if (!appsMap.has(account.appSlug)) {
-				appsMap.set(account.appSlug, {
-					slug: account.appSlug,
-					name: account.appName,
-					description: "",
-					categories: [],
-					provider: account.provider,
-				});
-			}
-		}
-
-		const apps = Array.from(appsMap.values());
-
-		return Response.json({ apps, connectedSlugs, toolCounts });
+		return Response.json({ apps, connectedSlugs, toolCounts, hasMore, endCursor });
 	}
 
 	async function handleConnect(req: Request, workspaceId: string | null): Promise<Response> {
@@ -365,7 +361,44 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 				outputTokens: t.outputTokens,
 			}));
 
-		return Response.json({ stats, chartData, threads });
+		let budget: Record<string, unknown> | undefined;
+		if (usageLimiter) {
+			const status = await usageLimiter.getBudgetStatus(workspace.id);
+			budget = {
+				limitCents: status.limitCents,
+				usedCents: status.usedCents,
+				remainingCents: status.remainingCents,
+				percentUsed: status.percentUsed,
+				resetsAt: status.resetsAt,
+			};
+		}
+
+		return Response.json({ stats, chartData, threads, budget });
+	}
+
+	async function handleGetBudget(workspaceId: string | null): Promise<Response> {
+		const workspace = await getWorkspace(workspaceId);
+		const settings = (workspace.settings as Record<string, unknown>) ?? {};
+		const budgetCents =
+			typeof settings.monthlyBudgetCents === "number" ? settings.monthlyBudgetCents : 2000;
+		return Response.json({ monthlyBudgetCents: budgetCents });
+	}
+
+	async function handleUpdateBudget(req: Request, workspaceId: string | null): Promise<Response> {
+		const { monthlyBudgetCents } = (await req.json()) as { monthlyBudgetCents: number };
+		if (typeof monthlyBudgetCents !== "number" || monthlyBudgetCents < 0) {
+			return Response.json(
+				{ error: "monthlyBudgetCents must be a non-negative number" },
+				{ status: 400 },
+			);
+		}
+		const workspace = await getWorkspace(workspaceId);
+		const settings = (workspace.settings as Record<string, unknown>) ?? {};
+		await prisma.workspace.update({
+			where: { id: workspace.id },
+			data: { settings: { ...settings, monthlyBudgetCents } },
+		});
+		return Response.json({ success: true });
 	}
 
 	async function handleTasks(workspaceId: string | null): Promise<Response> {
@@ -898,6 +931,15 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 					return Response.json({ error: "Unauthorized" }, { status: 401 });
 				}
 
+				if (req.method === "GET" && pathname === "/api/me") {
+					return Response.json({
+						username: authCtx.username,
+						mode: authCtx.mode,
+						isAdmin: authCtx.mode === "basic",
+						workspaceIds: authCtx.workspaceIds,
+					});
+				}
+
 				const workspaceId = auth.resolveWorkspaceId(req, authCtx);
 
 				if (req.method === "GET" && pathname === "/api/workspaces")
@@ -919,6 +961,10 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 					return await handleGetSettings(workspaceId);
 				if (req.method === "PUT" && pathname === "/api/settings/model")
 					return await handleUpdateModel(req, workspaceId);
+				if (req.method === "GET" && pathname === "/api/settings/budget")
+					return await handleGetBudget(workspaceId);
+				if (req.method === "PUT" && pathname === "/api/settings/budget")
+					return await handleUpdateBudget(req, workspaceId);
 
 				const runsIdMatch = pathname.match(/^\/api\/runs\/([^/]+)$/);
 

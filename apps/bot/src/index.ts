@@ -81,6 +81,8 @@ import { ThreadLock } from "./thread/lock.js";
 import { StaleThreadDetector } from "./thread/stale.js";
 import { createDashboardApi } from "./tool-gateway/dashboard-api.js";
 import { createToolGateway, registerWorkspaceToken } from "./tool-gateway/server.js";
+import { UsageLimiter } from "./usage/limiter.js";
+import { UsageTracker } from "./usage/tracker.js";
 
 const logger = createLogger("bot");
 
@@ -88,7 +90,10 @@ function createToolBackend(config: ReturnType<typeof loadConfig>): {
 	backend: ToolBackend;
 	registry: ReturnType<typeof createNativeRegistry>;
 } {
-	const llmProvider = new AnthropicProvider(config.ANTHROPIC_API_KEY);
+	let llmProvider: import("@openviktor/shared").LLMProvider | undefined;
+	if (config.ANTHROPIC_API_KEY) {
+		llmProvider = new AnthropicProvider(config.ANTHROPIC_API_KEY);
+	}
 	const registryConfig: RegistryConfig = {
 		slackToken: config.SLACK_BOT_TOKEN ?? "",
 		githubToken: config.GITHUB_TOKEN,
@@ -183,6 +188,11 @@ async function main(): Promise<void> {
 		config.STALE_CHECK_INTERVAL_MS,
 	);
 	staleDetector.start();
+
+	const usageTracker = new UsageTracker(prisma, createLogger("usage-tracker"));
+	const usageLimiter = isManaged(config)
+		? new UsageLimiter(prisma, createLogger("usage-limiter"), config.GLOBAL_MONTHLY_BUDGET_CENTS)
+		: null;
 
 	const llm = new LLMGateway(config);
 	const runner = new AgentRunner(
@@ -529,6 +539,24 @@ async function main(): Promise<void> {
 			"Event received",
 		);
 
+		// Usage enforcement (managed mode only)
+		if (usageLimiter) {
+			const budget = await usageLimiter.canRun(workspace.id);
+			if (!budget.allowed) {
+				await removeReaction(client, event.channel, event.ts, "hourglass_flowing_sand");
+				const resetDate = new Date(budget.resetsAt).toLocaleDateString("en-US", {
+					month: "long",
+					day: "numeric",
+				});
+				await safeReply(
+					say,
+					threadTs,
+					`Your workspace has reached its free tier usage limit ($${(budget.limitCents / 100).toFixed(0)}/month). Usage resets on ${resetDate}.`,
+				);
+				return;
+			}
+		}
+
 		try {
 			const result = await runner.run({
 				workspaceId: workspace.id,
@@ -549,6 +577,14 @@ async function main(): Promise<void> {
 					activeThreads,
 					...(onboarding ? { onboardingPrompt: buildOnboardingPrompt(userMessage) } : {}),
 				},
+			});
+
+			// Record usage (fire-and-forget)
+			void usageTracker.record(workspace.id, {
+				inputTokens: result.inputTokens,
+				outputTokens: result.outputTokens,
+				costCents: result.costCents,
+				toolExecutions: 0,
 			});
 
 			if (onboarding) {
@@ -662,6 +698,7 @@ async function main(): Promise<void> {
 			pdClient,
 			integrationWatcher,
 			disconnectApp: syncHandler?.disconnectApp.bind(syncHandler),
+			usageLimiter: usageLimiter ?? undefined,
 			logger: createLogger("dashboard-api"),
 		});
 		logger.info("Dashboard API enabled");

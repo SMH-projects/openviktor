@@ -86,7 +86,8 @@ export function createListAvailableIntegrationsExecutor(client: PipedreamClient)
 		const query = args.query as string;
 		const limit = typeof args.limit === "number" ? args.limit : 20;
 
-		const apps = await client.listApps({ q: query, hasActions: true, limit });
+		const result = await client.listApps({ q: query, hasActions: true, limit });
+		const apps = result.data;
 
 		if (apps.length === 0) {
 			return {
