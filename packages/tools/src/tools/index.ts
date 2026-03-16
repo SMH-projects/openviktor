@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@openviktor/db";
 import type { LLMProvider } from "@openviktor/shared";
-import { ToolRegistry, type ToolExecutor } from "../registry.js";
+import { type ToolExecutor, ToolRegistry } from "../registry.js";
 import {
 	aiStructuredOutputDefinition,
 	createAiStructuredOutputExecutor,

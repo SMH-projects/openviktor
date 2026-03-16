@@ -14,7 +14,6 @@ import {
 	ModalToolBackend,
 	ToolGatewayClient,
 	appendSlackLog,
-	registerDynamicSlackTools,
 	connectIntegrationDefinition,
 	createConnectIntegrationExecutor,
 	createDisconnectIntegrationExecutor,
@@ -29,6 +28,7 @@ import {
 	listAvailableIntegrationsDefinition,
 	listWorkspaceConnectionsDefinition,
 	registerDbTools,
+	registerDynamicSlackTools,
 	registerThreadOrchestrationTools,
 	restoreToolsFromDb,
 	submitPermissionRequestDefinition,
@@ -735,100 +735,84 @@ async function main(): Promise<void> {
 			logger: createLogger("events-api"),
 		});
 
+		async function runProactiveOnboarding(
+			workspaceId: string,
+			installerSlackUserId: string,
+		): Promise<void> {
+			const workspace = await prisma.workspace.findUnique({
+				where: { id: workspaceId },
+			});
+			if (!workspace) return;
+
+			// Skip if onboarding already completed (re-install)
+			const settings = workspace.settings as Record<string, unknown> | null;
+			if (settings?.onboardingCompletedAt) {
+				eventLogger.info({ workspaceId }, "Skipping proactive onboarding — already completed");
+				return;
+			}
+
+			const connection = connectionManager.getConnection(workspaceId);
+			if (!connection) {
+				eventLogger.warn({ workspaceId }, "No connection for proactive onboarding");
+				return;
+			}
+
+			// Open DM with installer
+			const dm = await connection.getClient().conversations.open({
+				users: installerSlackUserId,
+			});
+			const dmChannel = dm.channel?.id;
+			if (!dmChannel) {
+				eventLogger.warn({ workspaceId, installerSlackUserId }, "Failed to open DM for onboarding");
+				return;
+			}
+
+			// Mark onboarding complete immediately to prevent reactive onboarding race
+			await markOnboardingComplete(prisma, { id: workspace.id, settings: workspace.settings });
+
+			const member = await prisma.member.findFirst({
+				where: { workspaceId, slackUserId: installerSlackUserId },
+			});
+
+			const prompt = buildProactiveOnboardingPrompt(installerSlackUserId);
+			registerWorkspaceToken("local", workspaceId);
+
+			const result = await runner.run({
+				workspaceId,
+				memberId: member?.id ?? null,
+				triggerType: "ONBOARDING",
+				slackChannel: dmChannel,
+				slackThreadTs: `onboarding-${workspaceId}-${Date.now()}`,
+				userMessage: prompt,
+				promptContext: {
+					workspaceName: workspace.slackTeamName,
+					channel: dmChannel,
+					triggerType: "ONBOARDING",
+					onboardingPrompt: prompt,
+				},
+			});
+
+			void usageTracker.record(workspaceId, {
+				inputTokens: result.inputTokens,
+				outputTokens: result.outputTokens,
+				costCents: result.costCents,
+				toolExecutions: 0,
+			});
+
+			await seedChannelIntros(prisma, workspaceId, eventLogger);
+			await seedBuiltinSkills(prisma, workspaceId, eventLogger);
+			eventLogger.info({ workspaceId }, "Proactive onboarding completed");
+		}
+
 		oauthHandler = createOAuthHandler({
 			config,
 			prisma,
 			connectionManager,
 			logger: createLogger("oauth"),
 			onInstall: (workspaceId, installerSlackUserId) => {
-				void (async () => {
-					try {
-						const workspace = await prisma.workspace.findUnique({
-							where: { id: workspaceId },
-						});
-						if (!workspace) return;
-
-						// Skip if onboarding already completed (re-install)
-						const settings = workspace.settings as Record<string, unknown> | null;
-						if (settings?.onboardingCompletedAt) {
-							eventLogger.info(
-								{ workspaceId },
-								"Skipping proactive onboarding — already completed",
-							);
-							return;
-						}
-
-						const connection = connectionManager.getConnection(workspaceId);
-						if (!connection) {
-							eventLogger.warn(
-								{ workspaceId },
-								"No connection for proactive onboarding",
-							);
-							return;
-						}
-
-						const client = connection.getClient();
-
-						// Open DM with installer
-						const dm = await client.conversations.open({
-							users: installerSlackUserId,
-						});
-						const dmChannel = dm.channel?.id;
-						if (!dmChannel) {
-							eventLogger.warn(
-								{ workspaceId, installerSlackUserId },
-								"Failed to open DM for onboarding",
-							);
-							return;
-						}
-
-						// Mark onboarding complete immediately to prevent reactive onboarding race
-						await markOnboardingComplete(prisma, {
-							id: workspace.id,
-							settings: workspace.settings,
-						});
-
-						const member = await prisma.member.findFirst({
-							where: { workspaceId, slackUserId: installerSlackUserId },
-						});
-
-						const prompt = buildProactiveOnboardingPrompt(installerSlackUserId);
-
-						registerWorkspaceToken("local", workspaceId);
-
-						const result = await runner.run({
-							workspaceId,
-							memberId: member?.id ?? null,
-							triggerType: "ONBOARDING",
-							slackChannel: dmChannel,
-							slackThreadTs: `onboarding-${workspaceId}-${Date.now()}`,
-							userMessage: prompt,
-							promptContext: {
-								workspaceName: workspace.slackTeamName,
-								channel: dmChannel,
-								triggerType: "ONBOARDING",
-								onboardingPrompt: prompt,
-							},
-						});
-
-						void usageTracker.record(workspaceId, {
-							inputTokens: result.inputTokens,
-							outputTokens: result.outputTokens,
-							costCents: result.costCents,
-							toolExecutions: 0,
-						});
-
-						await seedChannelIntros(prisma, workspaceId, eventLogger);
-						await seedBuiltinSkills(prisma, workspaceId, eventLogger);
-
-						eventLogger.info({ workspaceId }, "Proactive onboarding completed");
-					} catch (err) {
-						eventLogger.error(
-							{ err, workspaceId },
-							"Proactive onboarding failed",
-						);
-					}
-				})();
+				void runProactiveOnboarding(workspaceId, installerSlackUserId).catch((err) =>
+					eventLogger.error({ err, workspaceId }, "Proactive onboarding failed"),
+				);
 			},
 		});
 	}
