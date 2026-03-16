@@ -210,7 +210,7 @@ export function createOAuthHandler(deps: OAuthHandlerConfig) {
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: `${webUrl}/dashboard`,
+					Location: `${webUrl}/runs`,
 					"Set-Cookie": `ov_session=${token}; HttpOnly; SameSite=Lax; Path=/; Domain=.${domain}; Max-Age=86400${secure}`,
 				},
 			});

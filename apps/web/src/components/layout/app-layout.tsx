@@ -14,7 +14,7 @@ import {
 	Wrench,
 } from "lucide-react";
 import { useEffect } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getMe, getWorkspaces, isAuthError } from "../../lib/api";
 import { cn } from "../../lib/utils";
 
@@ -66,9 +66,15 @@ export function AppLayout() {
 		}
 	}, [data]);
 
+	const location = useLocation();
 	const isAdmin = me?.isAdmin ?? false;
 	const navigation = isAdmin ? adminNavigation : userNavigation;
 	const label = isAdmin ? "Admin Dashboard" : "Dashboard";
+
+	const adminOnlyPaths = ["/dashboard", "/overview", "/settings", "/settings/team"];
+	if (me && !isAdmin && adminOnlyPaths.includes(location.pathname)) {
+		return <Navigate to="/runs" replace />;
+	}
 
 	return (
 		<div className="flex h-screen">
