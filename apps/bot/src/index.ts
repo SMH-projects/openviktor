@@ -14,6 +14,7 @@ import {
 	ModalToolBackend,
 	ToolGatewayClient,
 	appendSlackLog,
+	registerDynamicSlackTools,
 	connectIntegrationDefinition,
 	createConnectIntegrationExecutor,
 	createDisconnectIntegrationExecutor,
@@ -687,6 +688,21 @@ async function main(): Promise<void> {
 		onEvent,
 		onInteraction,
 	});
+
+	// ─── Dynamic Slack tools (managed mode) ─────────────
+
+	if (isManaged(config) && !config.SLACK_BOT_TOKEN) {
+		registerDynamicSlackTools(registry, (workspaceId) => {
+			const conn = connectionManager.getConnection(workspaceId);
+			if (!conn) return null;
+			return (conn.getClient().token as string) ?? null;
+		});
+		runner.updateToolConfig({
+			client: gatewayClient,
+			tools: registry.getDefinitions(),
+		});
+		logger.info("Registered dynamic Slack tools for managed mode");
+	}
 
 	// ─── Dashboard API ──────────────────────────────────
 

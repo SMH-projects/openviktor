@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@openviktor/db";
 import type { LLMProvider } from "@openviktor/shared";
-import { ToolRegistry } from "../registry.js";
+import { ToolRegistry, type ToolExecutor } from "../registry.js";
 import {
 	aiStructuredOutputDefinition,
 	createAiStructuredOutputExecutor,
@@ -317,6 +317,124 @@ export {
 	extractToolSchemas,
 } from "./integrations/index.js";
 export type { IntegrationSyncHandler } from "./integrations/index.js";
+
+export type SlackTokenResolver = (workspaceId: string) => string | null;
+
+export function registerDynamicSlackTools(
+	registry: ToolRegistry,
+	resolveToken: SlackTokenResolver,
+): void {
+	function wrap(
+		factory: (token: string) => Record<string, ToolExecutor>,
+		toolName: string,
+	): ToolExecutor {
+		return async (args, ctx) => {
+			const token = resolveToken(ctx.workspaceId);
+			if (!token) {
+				return {
+					output: null,
+					durationMs: 0,
+					error: `No Slack token available for workspace ${ctx.workspaceId}`,
+				};
+			}
+			return factory(token)[toolName](args, ctx);
+		};
+	}
+
+	const local = { localOnly: true };
+
+	// Slack comms tools
+	registry.register(
+		"coworker_slack_history",
+		coworkerSlackHistoryDefinition,
+		wrap(createSlackToolExecutors, "coworker_slack_history"),
+		local,
+	);
+	registry.register(
+		"coworker_send_slack_message",
+		coworkerSendSlackMessageDefinition,
+		wrap(createSlackToolExecutors, "coworker_send_slack_message"),
+		local,
+	);
+	registry.register(
+		"coworker_slack_react",
+		coworkerSlackReactDefinition,
+		wrap(createSlackToolExecutors, "coworker_slack_react"),
+		local,
+	);
+	registry.register(
+		"coworker_delete_slack_message",
+		coworkerDeleteSlackMessageDefinition,
+		wrap(createSlackToolExecutors, "coworker_delete_slack_message"),
+		local,
+	);
+	registry.register(
+		"coworker_update_slack_message",
+		coworkerUpdateSlackMessageDefinition,
+		wrap(createSlackToolExecutors, "coworker_update_slack_message"),
+		local,
+	);
+	registry.register(
+		"coworker_upload_to_slack",
+		coworkerUploadToSlackDefinition,
+		wrap(createSlackToolExecutors, "coworker_upload_to_slack"),
+	);
+	registry.register(
+		"coworker_download_from_slack",
+		coworkerDownloadFromSlackDefinition,
+		wrap(createSlackToolExecutors, "coworker_download_from_slack"),
+	);
+
+	// Slack admin tools
+	registry.register(
+		"coworker_list_slack_channels",
+		coworkerListSlackChannelsDefinition,
+		wrap(createSlackAdminExecutors, "coworker_list_slack_channels"),
+		local,
+	);
+	registry.register(
+		"coworker_join_slack_channels",
+		coworkerJoinSlackChannelsDefinition,
+		wrap(createSlackAdminExecutors, "coworker_join_slack_channels"),
+		local,
+	);
+	registry.register(
+		"coworker_open_slack_conversation",
+		coworkerOpenSlackConversationDefinition,
+		wrap(createSlackAdminExecutors, "coworker_open_slack_conversation"),
+		local,
+	);
+	registry.register(
+		"coworker_leave_slack_channels",
+		coworkerLeaveSlackChannelsDefinition,
+		wrap(createSlackAdminExecutors, "coworker_leave_slack_channels"),
+		local,
+	);
+	registry.register(
+		"coworker_list_slack_users",
+		coworkerListSlackUsersDefinition,
+		wrap(createSlackAdminExecutors, "coworker_list_slack_users"),
+		local,
+	);
+	registry.register(
+		"coworker_invite_slack_user_to_team",
+		coworkerInviteSlackUserToTeamDefinition,
+		wrap(createSlackAdminExecutors, "coworker_invite_slack_user_to_team"),
+		local,
+	);
+	registry.register(
+		"coworker_get_slack_reactions",
+		coworkerGetSlackReactionsDefinition,
+		wrap(createSlackAdminExecutors, "coworker_get_slack_reactions"),
+		local,
+	);
+	registry.register(
+		"coworker_report_issue",
+		coworkerReportIssueDefinition,
+		wrap(createSlackAdminExecutors, "coworker_report_issue"),
+		local,
+	);
+}
 
 export type { ThreadOrchestrationDeps };
 

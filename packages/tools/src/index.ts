@@ -14,9 +14,10 @@ export {
 export {
 	createNativeRegistry,
 	registerDbTools,
+	registerDynamicSlackTools,
 	registerThreadOrchestrationTools,
 } from "./tools/index.js";
-export type { RegistryConfig, ThreadOrchestrationDeps } from "./tools/index.js";
+export type { RegistryConfig, SlackTokenResolver, ThreadOrchestrationDeps } from "./tools/index.js";
 export type { SpawnAgentRunParams } from "./tools/thread-orchestration.js";
 export {
 	listAvailableIntegrationsDefinition,
