@@ -739,7 +739,7 @@ export default function Hero() {
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 xl:gap-20 items-start">
 					<div>
 						<a
-							href="https://github.com/humalikeai"
+							href="https://github.com/zggf-zggf/openviktor"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium mb-6 hover:border-[#1e6a8a] hover:text-[#1e6a8a] transition-colors"

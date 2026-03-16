@@ -131,7 +131,7 @@ export default function Pricing() {
 
 				<div className="mt-8">
 					<a
-						href="https://github.com/humalikeai"
+						href="https://github.com/zggf-zggf/openviktor"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"

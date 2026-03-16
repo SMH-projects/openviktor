@@ -27,7 +27,7 @@ export default function Footer() {
 						</p>
 						<div className="flex items-center gap-4 mt-6">
 							<a
-								href="https://github.com/humalikeai"
+								href="https://github.com/zggf-zggf/openviktor"
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="GitHub"

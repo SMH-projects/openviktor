@@ -82,7 +82,7 @@ export default function Navbar() {
 						Sign in
 					</a>
 					<a
-						href="https://github.com/humalikeai"
+						href="https://github.com/zggf-zggf/openviktor"
 						target="_blank"
 						rel="noopener noreferrer"
 						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium hover:border-[#111] hover:text-[#111] transition-colors"
