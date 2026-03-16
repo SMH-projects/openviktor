@@ -123,7 +123,7 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	async function handleIntegrations(url: URL, workspaceId: string | null): Promise<Response> {
 		const workspace = await getWorkspace(workspaceId);
 		const search = url.searchParams.get("search") ?? "";
-		const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+		const after = url.searchParams.get("after") ?? undefined;
 		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 100));
 
 		const [accounts, toolDefs] = await Promise.all([
@@ -157,17 +157,18 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 			provider: string;
 		};
 
-		// Fetch one page from Pipedream (server-side pagination)
+		// Fetch one page from Pipedream (cursor-based pagination)
 		let apps: AppInfo[] = [];
+		let endCursor: string | null = null;
 		let hasMore = false;
 		if (pdClient) {
-			const pdApps = await pdClient.listApps({
+			const result = await pdClient.listApps({
 				hasActions: true,
 				limit,
-				offset,
+				after,
 				...(search ? { q: search } : {}),
 			});
-			apps = pdApps.map((app) => ({
+			apps = result.data.map((app) => ({
 				slug: app.name_slug,
 				name: app.name,
 				description: app.description ?? "",
@@ -175,11 +176,12 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 				categories: app.categories ?? [],
 				provider: "pipedream",
 			}));
-			hasMore = pdApps.length === limit;
+			endCursor = result.page_info.end_cursor;
+			hasMore = result.data.length === limit && endCursor !== null;
 		}
 
 		// Add connected apps not in current page (always show at top on first page)
-		if (offset === 0) {
+		if (!after) {
 			const appSlugs = new Set(apps.map((a) => a.slug));
 			for (const account of accounts) {
 				if (!appSlugs.has(account.appSlug)) {
@@ -194,7 +196,7 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 			}
 		}
 
-		return Response.json({ apps, connectedSlugs, toolCounts, hasMore, offset });
+		return Response.json({ apps, connectedSlugs, toolCounts, hasMore, endCursor });
 	}
 
 	async function handleConnect(req: Request, workspaceId: string | null): Promise<Response> {

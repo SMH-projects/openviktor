@@ -28,15 +28,15 @@ export function IntegrationsPage() {
 	const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, error } =
 		useInfiniteQuery({
 			queryKey: ["integrations", debouncedSearch],
-			queryFn: ({ pageParam = 0 }) =>
+			queryFn: ({ pageParam }) =>
 				getIntegrations({
 					search: debouncedSearch || undefined,
-					offset: pageParam,
+					after: pageParam || undefined,
 					limit: PAGE_SIZE,
 				}),
-			initialPageParam: 0,
+			initialPageParam: "" as string,
 			getNextPageParam: (lastPage) =>
-				lastPage.hasMore ? (lastPage.offset ?? 0) + PAGE_SIZE : undefined,
+				lastPage.hasMore && lastPage.endCursor ? lastPage.endCursor : undefined,
 		});
 
 	const connect = useMutation({

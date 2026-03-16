@@ -102,7 +102,7 @@ export interface IntegrationsData {
 	connectedSlugs: string[];
 	toolCounts: Record<string, number>;
 	hasMore?: boolean;
-	offset?: number;
+	endCursor?: string | null;
 }
 
 export interface TaskItem {
@@ -300,12 +300,12 @@ export function getTeam(): Promise<TeamData> {
 
 export function getIntegrations(opts?: {
 	search?: string;
-	offset?: number;
+	after?: string;
 	limit?: number;
 }): Promise<IntegrationsData> {
 	const params = new URLSearchParams();
 	if (opts?.search) params.set("search", opts.search);
-	if (opts?.offset) params.set("offset", String(opts.offset));
+	if (opts?.after) params.set("after", opts.after);
 	if (opts?.limit) params.set("limit", String(opts.limit));
 	const qs = params.toString();
 	return fetchApi(`/integrations${qs ? `?${qs}` : ""}`);

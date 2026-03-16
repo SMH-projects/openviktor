@@ -42,6 +42,12 @@ describe("PipedreamClient", () => {
 							auth_type: "oauth",
 						},
 					],
+					page_info: {
+						count: 1,
+						total_count: 1,
+						start_cursor: null,
+						end_cursor: null,
+					},
 				};
 			}
 
@@ -114,11 +120,11 @@ describe("PipedreamClient", () => {
 	it("lists apps with search query", async () => {
 		setupFetch();
 		const client = new PipedreamClient(TEST_CONFIG);
-		const apps = await client.listApps({ q: "google", hasActions: true, limit: 10 });
+		const result = await client.listApps({ q: "google", hasActions: true, limit: 10 });
 
-		expect(apps).toHaveLength(1);
-		expect(apps[0].name_slug).toBe("google_sheets");
-		expect(apps[0].name).toBe("Google Sheets");
+		expect(result.data).toHaveLength(1);
+		expect(result.data[0].name_slug).toBe("google_sheets");
+		expect(result.data[0].name).toBe("Google Sheets");
 	});
 
 	it("lists actions for an app", async () => {
