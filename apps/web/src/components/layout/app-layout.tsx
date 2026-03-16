@@ -1,11 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import {
 	Activity,
-	Bot,
 	Brain,
 	Calendar,
-	Cpu,
 	DollarSign,
+	ExternalLink,
+	Github,
 	LayoutDashboard,
 	MessageSquare,
 	Plug,
@@ -69,7 +69,6 @@ export function AppLayout() {
 	const location = useLocation();
 	const isAdmin = me?.isAdmin ?? false;
 	const navigation = isAdmin ? adminNavigation : userNavigation;
-	const label = isAdmin ? "Admin Dashboard" : "Dashboard";
 
 	const adminOnlyPaths = ["/dashboard", "/overview", "/settings", "/settings/team"];
 	if (me && !isAdmin && adminOnlyPaths.includes(location.pathname)) {
@@ -78,11 +77,16 @@ export function AppLayout() {
 
 	return (
 		<div className="flex h-screen">
-			<aside className="flex w-60 flex-col border-r border-slate-200 bg-white">
-				<div className="flex h-14 items-center gap-2 border-b border-slate-200 px-4">
-					<Cpu className="h-6 w-6 text-primary-600" />
-					<span className="text-lg font-semibold tracking-tight">OpenViktor</span>
-				</div>
+			<aside className="flex w-60 flex-col border-r border-[#d6eaef] bg-[#f7fbfd]">
+				<a href="/" className="flex h-14 items-center gap-2.5 border-b border-[#d6eaef] px-4">
+					<img src="/openviktor.png" alt="OpenViktor" className="h-7 w-7" />
+					<span
+						className="text-base font-bold tracking-[0.1em] text-[#111]"
+						style={{ fontFamily: "'Manrope', sans-serif" }}
+					>
+						OPENVIKTOR
+					</span>
+				</a>
 				<nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
 					{navigation.map((item) => (
 						<NavLink
@@ -93,8 +97,8 @@ export function AppLayout() {
 								cn(
 									"flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
 									isActive
-										? "bg-primary-50 text-primary-700"
-										: "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+										? "bg-[#e8f5f8] text-[#1e6a8a]"
+										: "text-[#6b7080] hover:bg-[#eef7fa] hover:text-[#111]",
 								)
 							}
 						>
@@ -103,14 +107,28 @@ export function AppLayout() {
 						</NavLink>
 					))}
 				</nav>
-				<div className="border-t border-slate-200 p-3">
-					<div className="flex items-center gap-2 text-xs text-slate-400">
-						<Bot className="h-3.5 w-3.5" />
-						<span>{label}</span>
+				<div className="border-t border-[#d6eaef] px-4 py-3">
+					<div className="flex items-center justify-between">
+						<a
+							href="https://github.com/zggf-zggf/openviktor"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center gap-1.5 text-xs text-[#9095a5] hover:text-[#1e6a8a] transition-colors"
+						>
+							<Github className="h-3.5 w-3.5" />
+							<span>GitHub</span>
+							<ExternalLink className="h-2.5 w-2.5" />
+						</a>
+						<a
+							href="/"
+							className="text-xs text-[#9095a5] hover:text-[#1e6a8a] transition-colors"
+						>
+							openviktor.com
+						</a>
 					</div>
 				</div>
 			</aside>
-			<main className="flex-1 overflow-y-auto bg-slate-50 p-6">
+			<main className="flex-1 overflow-y-auto bg-[#fafcfd] p-6">
 				<Outlet />
 			</main>
 		</div>
