@@ -16,7 +16,18 @@ check_cmd() {
   fi
 }
 
-check_cmd "bun" "https://bun.sh"
+if ! command -v "bun" &> /dev/null; then
+  echo "bun is not installed. Installing..."
+  curl -fsSL https://bun.sh/install | bash
+  export BUN_INSTALL="$HOME/.bun"
+  export PATH="$BUN_INSTALL/bin:$PATH"
+  if ! command -v "bun" &> /dev/null; then
+    echo "Error: bun installation failed."
+    echo "Install it manually from: https://bun.sh"
+    exit 1
+  fi
+  echo "bun installed successfully ($(bun --version))"
+fi
 check_cmd "docker" "https://docs.docker.com/get-docker/"
 
 echo "Prerequisites OK"
@@ -33,9 +44,11 @@ if [ ! -f ".env" ]; then
 fi
 
 # Export all vars from .env so Prisma and other tools can find them
-set -a
-source .env
-set +a
+if [ -f ".env" ]; then
+  set -a
+  source .env
+  set +a
+fi
 
 # ─── Dependencies ───────────────────────────────────────
 echo "Installing dependencies..."
