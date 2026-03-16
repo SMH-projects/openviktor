@@ -54,7 +54,7 @@ async function runCommand(
 			}
 		});
 
-		child.on("close", (code) => {
+		(child as any).on("close", (code: number | null) => {
 			clearTimeout(timer);
 			if (killed) {
 				resolve({
@@ -74,7 +74,7 @@ async function runCommand(
 			resolve({ output, durationMs: 0 });
 		});
 
-		child.on("error", (err) => {
+		(child as any).on("error", (err: Error) => {
 			clearTimeout(timer);
 			resolve({ output: null, durationMs: 0, error: `Failed to spawn process: ${err.message}` });
 		});

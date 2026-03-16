@@ -5,10 +5,10 @@ import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/empty-state";
 import {
+	type IntegrationApp,
 	connectIntegration,
 	disconnectIntegration,
 	getIntegrations,
-	type IntegrationApp,
 } from "../lib/api";
 
 const PAGE_SIZE = 100;
@@ -158,9 +158,7 @@ export function IntegrationsPage() {
 			{sorted.length === 0 ? (
 				<Card>
 					<EmptyState
-						message={
-							search ? "No integrations match your search" : "No integrations available"
-						}
+						message={search ? "No integrations match your search" : "No integrations available"}
 					/>
 				</Card>
 			) : (
@@ -170,17 +168,10 @@ export function IntegrationsPage() {
 							const connected = connectedSlugs.has(app.slug);
 							const toolCount = toolCounts[app.slug] ?? 0;
 							return (
-								<Card
-									key={app.slug}
-									className={connected ? "ring-1 ring-emerald-200" : undefined}
-								>
+								<Card key={app.slug} className={connected ? "ring-1 ring-emerald-200" : undefined}>
 									<div className="flex items-start gap-3">
 										{app.imgSrc ? (
-											<img
-												src={app.imgSrc}
-												alt={app.name}
-												className="h-10 w-10 rounded-lg"
-											/>
+											<img src={app.imgSrc} alt={app.name} className="h-10 w-10 rounded-lg" />
 										) : (
 											<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-400">
 												{app.name.charAt(0).toUpperCase()}
@@ -204,9 +195,7 @@ export function IntegrationsPage() {
 											)}
 											<div className="mt-1 flex items-center gap-2">
 												{toolCount > 0 && (
-													<span className="text-xs text-slate-400">
-														{toolCount} tools
-													</span>
+													<span className="text-xs text-slate-400">{toolCount} tools</span>
 												)}
 												{app.categories.length > 0 && (
 													<span className="text-xs text-slate-400">

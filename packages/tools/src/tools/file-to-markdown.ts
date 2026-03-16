@@ -154,7 +154,7 @@ async function runProcess(
 			}
 		});
 
-		child.on("close", (code) => {
+		(child as any).on("close", (code: number | null) => {
 			clearTimeout(timer);
 			if (killed) {
 				resolve({ stdout, stderr, error: `${command} timed out after 30s` });
@@ -171,7 +171,7 @@ async function runProcess(
 			});
 		});
 
-		child.on("error", (err: NodeJS.ErrnoException) => {
+		(child as any).on("error", (err: NodeJS.ErrnoException) => {
 			clearTimeout(timer);
 			resolve({
 				stdout,

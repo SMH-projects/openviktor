@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+type RefinementCtx = z.RefinementCtx;
+
+function requireField(ctx: RefinementCtx, value: unknown, path: string, message: string): void {
+	if (!value) {
+		ctx.addIssue({ code: z.ZodIssueCode.custom, message, path: [path] });
+	}
+}
+
 const envSchema = z
 	.object({
 		// Deployment
@@ -98,27 +106,24 @@ const envSchema = z
 		const mode = data.DEPLOYMENT_MODE;
 
 		if (mode === "selfhosted") {
-			if (!data.SLACK_BOT_TOKEN) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "SLACK_BOT_TOKEN is required in selfhosted mode",
-					path: ["SLACK_BOT_TOKEN"],
-				});
-			}
-			if (!data.SLACK_APP_TOKEN) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "SLACK_APP_TOKEN is required in selfhosted mode",
-					path: ["SLACK_APP_TOKEN"],
-				});
-			}
-			if (!data.ANTHROPIC_API_KEY) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "ANTHROPIC_API_KEY is required in selfhosted mode",
-					path: ["ANTHROPIC_API_KEY"],
-				});
-			}
+			requireField(
+				ctx,
+				data.SLACK_BOT_TOKEN,
+				"SLACK_BOT_TOKEN",
+				"SLACK_BOT_TOKEN is required in selfhosted mode",
+			);
+			requireField(
+				ctx,
+				data.SLACK_APP_TOKEN,
+				"SLACK_APP_TOKEN",
+				"SLACK_APP_TOKEN is required in selfhosted mode",
+			);
+			requireField(
+				ctx,
+				data.ANTHROPIC_API_KEY,
+				"ANTHROPIC_API_KEY",
+				"ANTHROPIC_API_KEY is required in selfhosted mode",
+			);
 		}
 
 		if (mode === "managed") {
@@ -140,58 +145,55 @@ const envSchema = z
 		}
 
 		if (mode === "managed") {
-			if (!data.SLACK_CLIENT_ID) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "SLACK_CLIENT_ID is required in managed mode",
-					path: ["SLACK_CLIENT_ID"],
-				});
-			}
-			if (!data.SLACK_CLIENT_SECRET) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "SLACK_CLIENT_SECRET is required in managed mode",
-					path: ["SLACK_CLIENT_SECRET"],
-				});
-			}
-			if (!data.SLACK_STATE_SECRET) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "SLACK_STATE_SECRET is required in managed mode",
-					path: ["SLACK_STATE_SECRET"],
-				});
-			}
-			if (!data.BASE_URL) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "BASE_URL is required in managed mode (public URL for Events API)",
-					path: ["BASE_URL"],
-				});
-			}
-			if (!data.ENCRYPTION_KEY) {
-				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
-					message: "ENCRYPTION_KEY is required in managed mode (for encrypting OAuth tokens)",
-					path: ["ENCRYPTION_KEY"],
-				});
-			}
+			requireField(
+				ctx,
+				data.SLACK_CLIENT_ID,
+				"SLACK_CLIENT_ID",
+				"SLACK_CLIENT_ID is required in managed mode",
+			);
+			requireField(
+				ctx,
+				data.SLACK_CLIENT_SECRET,
+				"SLACK_CLIENT_SECRET",
+				"SLACK_CLIENT_SECRET is required in managed mode",
+			);
+			requireField(
+				ctx,
+				data.SLACK_STATE_SECRET,
+				"SLACK_STATE_SECRET",
+				"SLACK_STATE_SECRET is required in managed mode",
+			);
+			requireField(
+				ctx,
+				data.BASE_URL,
+				"BASE_URL",
+				"BASE_URL is required in managed mode (public URL for Events API)",
+			);
+			requireField(
+				ctx,
+				data.ENCRYPTION_KEY,
+				"ENCRYPTION_KEY",
+				"ENCRYPTION_KEY is required in managed mode (for encrypting OAuth tokens)",
+			);
 		}
 
 		const authMode = data.DASHBOARD_AUTH_MODE ?? (mode === "selfhosted" ? "basic" : "slack-oauth");
-		if (authMode === "basic" && !data.DASHBOARD_PASSWORD) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "DASHBOARD_PASSWORD is required when DASHBOARD_AUTH_MODE=basic",
-				path: ["DASHBOARD_PASSWORD"],
-			});
+		if (authMode === "basic") {
+			requireField(
+				ctx,
+				data.DASHBOARD_PASSWORD,
+				"DASHBOARD_PASSWORD",
+				"DASHBOARD_PASSWORD is required when DASHBOARD_AUTH_MODE=basic",
+			);
 		}
 
-		if (data.TOOL_BACKEND === "modal" && !data.MODAL_ENDPOINT_URL) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: "MODAL_ENDPOINT_URL is required when TOOL_BACKEND=modal",
-				path: ["MODAL_ENDPOINT_URL"],
-			});
+		if (data.TOOL_BACKEND === "modal") {
+			requireField(
+				ctx,
+				data.MODAL_ENDPOINT_URL,
+				"MODAL_ENDPOINT_URL",
+				"MODAL_ENDPOINT_URL is required when TOOL_BACKEND=modal",
+			);
 		}
 
 		const pdFields = [

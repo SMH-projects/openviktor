@@ -54,7 +54,7 @@ export const globExecutor: ToolExecutor = async (args, ctx) => {
 			stderr += data.toString();
 		});
 
-		child.on("close", (code) => {
+		(child as any).on("close", (code: number | null) => {
 			if (code !== 0 && stderr.trim()) {
 				resolve({ output: null, durationMs: 0, error: `Glob failed: ${stderr.trim()}` });
 				return;
@@ -79,7 +79,7 @@ export const globExecutor: ToolExecutor = async (args, ctx) => {
 			});
 		});
 
-		child.on("error", (err) => {
+		(child as any).on("error", (err: Error) => {
 			resolve({
 				output: null,
 				durationMs: 0,

@@ -236,6 +236,7 @@ async function main(): Promise<void> {
 		heartbeatEnabled: config.HEARTBEAT_ENABLED,
 		slackToken: config.SLACK_BOT_TOKEN ?? "",
 		defaultModel: config.DEFAULT_MODEL,
+		encryptionKey: config.ENCRYPTION_KEY,
 	});
 
 	const cronTools = createCronToolExecutors(prisma, scheduler);

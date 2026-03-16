@@ -27,6 +27,24 @@
 			"semicolons": "always"
 		}
 	},
+	"overrides": [
+		{
+			"include": ["apps/landing/**"],
+			"linter": {
+				"rules": {
+					"a11y": {
+						"noSvgWithoutTitle": "off",
+						"useKeyWithClickEvents": "off",
+						"useMediaCaption": "off",
+						"useButtonType": "off"
+					},
+					"suspicious": {
+						"noArrayIndexKey": "off"
+					}
+				}
+			}
+		}
+	],
 	"files": {
 		"ignore": [
 			"node_modules",

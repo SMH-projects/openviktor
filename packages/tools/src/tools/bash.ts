@@ -72,7 +72,7 @@ export const bashExecutor: ToolExecutor = async (args, ctx) => {
 			}
 		});
 
-		child.on("close", (code, signal) => {
+		(child as any).on("close", (code: number | null, signal: string | null) => {
 			const output: Record<string, unknown> = {
 				exit_code: code ?? -1,
 				stdout: stdout + (stdoutTruncated ? "\n... (output truncated)" : ""),
@@ -91,7 +91,7 @@ export const bashExecutor: ToolExecutor = async (args, ctx) => {
 			resolve({ output, durationMs: 0 });
 		});
 
-		child.on("error", (err) => {
+		(child as any).on("error", (err: Error) => {
 			resolve({
 				output: null,
 				durationMs: 0,

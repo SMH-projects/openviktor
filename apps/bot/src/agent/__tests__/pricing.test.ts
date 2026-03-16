@@ -32,7 +32,7 @@ describe("calculateCostCents", () => {
 
 	it("calculates cost for Haiku", () => {
 		const cost = calculateCostCents(
-			"claude-haiku-4-20250514",
+			"claude-haiku-4-5-20251001",
 			usage({ inputTokens: 1_000_000, outputTokens: 1_000_000 }),
 		);
 		// $1 input + $5 output = $6 = 600 cents

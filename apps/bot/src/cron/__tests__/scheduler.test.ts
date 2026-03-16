@@ -105,7 +105,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 0,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -145,7 +145,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 0,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -178,7 +178,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 0,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -216,7 +216,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 5,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -259,7 +259,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 0,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -299,7 +299,7 @@ describe("CronScheduler", () => {
 			runCount: 0,
 			maxRuns: null,
 			enabled: false,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma();
@@ -334,7 +334,7 @@ describe("CronScheduler", () => {
 				dependentPaths: [],
 				lastRunAt: null,
 				runCount: 0,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -370,7 +370,7 @@ describe("CronScheduler", () => {
 				dependentPaths: [],
 				lastRunAt: null,
 				runCount: 0,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -407,7 +407,7 @@ describe("CronScheduler", () => {
 				dependentPaths: [],
 				lastRunAt: null,
 				runCount: 0,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -444,7 +444,7 @@ describe("CronScheduler", () => {
 				lastRunAt: null,
 				runCount: 0,
 				enabled: true,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma();
@@ -501,7 +501,7 @@ describe("CronScheduler", () => {
 				dependentPaths: ["data-fetch"],
 				lastRunAt: new Date("2026-03-14T10:00:00Z"),
 				runCount: 1,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -535,7 +535,7 @@ describe("CronScheduler", () => {
 				dependentPaths: ["data-fetch"],
 				lastRunAt: new Date("2026-03-14T09:00:00Z"),
 				runCount: 1,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -569,7 +569,7 @@ describe("CronScheduler", () => {
 				dependentPaths: ["data-fetch"],
 				lastRunAt: new Date("2026-03-14T09:00:00Z"),
 				runCount: 1,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -603,7 +603,7 @@ describe("CronScheduler", () => {
 				dependentPaths: ["nonexistent"],
 				lastRunAt: new Date("2026-03-14T09:00:00Z"),
 				runCount: 1,
-				workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+				workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 			};
 
 			const prisma = createMockPrisma([dueJob]);
@@ -636,7 +636,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 2,
 			maxRuns: 3,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);
@@ -659,6 +659,145 @@ describe("CronScheduler", () => {
 		);
 	});
 
+	it("posts failure notification to Slack when cron job fails", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+		const runner = createMockRunner();
+		runner.run.mockRejectedValue(new Error("model: claude-haiku-4-20250514"));
+
+		const dueJob = {
+			id: "cron-notify",
+			workspaceId: "ws-1",
+			name: "Notify Job",
+			schedule: "0 9 * * *",
+			type: "CUSTOM",
+			costTier: 1,
+			agentPrompt: "Do it",
+			conditionScript: null,
+			slackChannel: "C123",
+			model: null,
+			scriptCommand: null,
+			dependentPaths: [],
+			lastRunAt: null,
+			runCount: 0,
+			maxRuns: null,
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
+		};
+
+		const prisma = createMockPrisma([dueJob]);
+		prisma.workspace = { findUnique: vi.fn().mockResolvedValue({ settings: {} }) };
+
+		scheduler = new CronScheduler(prisma, runner, createMockLogger(), defaultConfig);
+		await scheduler.tick();
+		await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+
+		expect(fetchSpy).toHaveBeenCalledWith(
+			"https://slack.com/api/chat.postMessage",
+			expect.objectContaining({
+				method: "POST",
+				body: expect.stringContaining("Notify Job"),
+			}),
+		);
+
+		fetchSpy.mockRestore();
+	});
+
+	it("auto-disables and notifies after consecutive failures", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+		const runner = createMockRunner();
+		runner.run.mockRejectedValue(new Error("LLM error"));
+
+		const dueJob = {
+			id: "cron-autodisable",
+			workspaceId: "ws-1",
+			name: "Flaky Job",
+			schedule: "0 9 * * *",
+			type: "CUSTOM",
+			costTier: 1,
+			agentPrompt: "Do it",
+			conditionScript: null,
+			slackChannel: "C123",
+			model: null,
+			scriptCommand: null,
+			dependentPaths: [],
+			lastRunAt: null,
+			runCount: 0,
+			maxRuns: null,
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
+		};
+
+		const prisma = createMockPrisma([dueJob]);
+		prisma.workspace = { findUnique: vi.fn().mockResolvedValue({ settings: {} }) };
+		prisma.agentRun.findMany = vi
+			.fn()
+			.mockResolvedValue([{ status: "FAILED" }, { status: "FAILED" }, { status: "FAILED" }]);
+
+		scheduler = new CronScheduler(prisma, runner, createMockLogger(), defaultConfig);
+		await scheduler.tick();
+		await vi.waitFor(() => expect(prisma.cronJob.update).toHaveBeenCalledTimes(2));
+
+		const disableCall = prisma.cronJob.update.mock.calls.find(
+			(c: unknown[]) => (c[0] as { data: { enabled?: boolean } }).data.enabled === false,
+		);
+		expect(disableCall).toBeDefined();
+
+		const autoDisableNotification = fetchSpy.mock.calls.find(
+			(c: unknown[]) =>
+				typeof c[1] === "object" &&
+				c[1] !== null &&
+				"body" in c[1] &&
+				typeof (c[1] as { body: string }).body === "string" &&
+				(c[1] as { body: string }).body.includes("auto-disabled"),
+		);
+		expect(autoDisableNotification).toBeDefined();
+
+		fetchSpy.mockRestore();
+	});
+
+	it("does not post notification when slackChannel is null", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+
+		const runner = createMockRunner();
+		runner.run.mockRejectedValue(new Error("LLM error"));
+
+		const dueJob = {
+			id: "cron-no-channel",
+			workspaceId: "ws-1",
+			name: "No Channel Job",
+			schedule: "0 9 * * *",
+			type: "CUSTOM",
+			costTier: 1,
+			agentPrompt: "Do it",
+			conditionScript: null,
+			slackChannel: null,
+			model: null,
+			scriptCommand: null,
+			dependentPaths: [],
+			lastRunAt: null,
+			runCount: 0,
+			maxRuns: null,
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
+		};
+
+		const prisma = createMockPrisma([dueJob]);
+		prisma.workspace = { findUnique: vi.fn().mockResolvedValue({ settings: {} }) };
+
+		scheduler = new CronScheduler(prisma, runner, createMockLogger(), defaultConfig);
+		await scheduler.tick();
+		await vi.waitFor(() => expect(prisma.cronJob.update).toHaveBeenCalled());
+
+		expect(fetchSpy).not.toHaveBeenCalled();
+
+		fetchSpy.mockRestore();
+	});
+
 	it("does not auto-disable when maxRuns is null", async () => {
 		const runner = createMockRunner();
 		const dueJob = {
@@ -677,7 +816,7 @@ describe("CronScheduler", () => {
 			lastRunAt: null,
 			runCount: 100,
 			maxRuns: null,
-			workspace: { id: "ws-1", slackTeamName: "Test", settings: {} },
+			workspace: { id: "ws-1", slackTeamName: "Test", slackBotToken: "xoxb-ws", settings: {} },
 		};
 
 		const prisma = createMockPrisma([dueJob]);

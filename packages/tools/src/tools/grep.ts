@@ -95,7 +95,7 @@ export const grepExecutor: ToolExecutor = async (args, ctx) => {
 			stderr += data.toString();
 		});
 
-		child.on("close", (code) => {
+		(child as any).on("close", (code: number | null) => {
 			const prefix = ctx.workspaceDir.endsWith("/") ? ctx.workspaceDir : `${ctx.workspaceDir}/`;
 			const content = stdout.replace(new RegExp(escapeRegex(prefix), "g"), "");
 
@@ -125,7 +125,7 @@ export const grepExecutor: ToolExecutor = async (args, ctx) => {
 			});
 		});
 
-		child.on("error", (err) => {
+		(child as any).on("error", (err: Error) => {
 			resolve({
 				output: null,
 				durationMs: 0,

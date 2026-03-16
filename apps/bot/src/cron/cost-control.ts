@@ -5,7 +5,7 @@ import { estimateRunsPerDay } from "./cron-parser.js";
 // Tier 1: cheap/fast for simple checks. Tier 2: standard for conditional work.
 // Tier 3: same as tier 2 for now — upgrade to opus when cost-justified.
 const DEFAULT_MODELS: Record<number, string> = {
-	1: "claude-haiku-4-20250514",
+	1: "claude-haiku-4-5-20251001",
 	2: "claude-sonnet-4-20250514",
 	3: "claude-sonnet-4-20250514",
 };
