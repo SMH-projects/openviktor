@@ -119,10 +119,7 @@ export function AppLayout() {
 							<span>GitHub</span>
 							<ExternalLink className="h-2.5 w-2.5" />
 						</a>
-						<a
-							href="/"
-							className="text-xs text-[#9095a5] hover:text-[#1e6a8a] transition-colors"
-						>
+						<a href="/" className="text-xs text-[#9095a5] hover:text-[#1e6a8a] transition-colors">
 							openviktor.com
 						</a>
 					</div>
