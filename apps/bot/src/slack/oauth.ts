@@ -8,6 +8,7 @@ import type { ConnectionManager } from "./connection-manager.js";
 const OAUTH_SCOPES = [
 	"app_mentions:read",
 	"channels:history",
+	"channels:join",
 	"channels:read",
 	"chat:write",
 	"files:read",
@@ -17,6 +18,8 @@ const OAUTH_SCOPES = [
 	"im:history",
 	"im:read",
 	"im:write",
+	"mpim:history",
+	"mpim:read",
 	"reactions:read",
 	"reactions:write",
 	"users:read",

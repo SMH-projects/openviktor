@@ -3,6 +3,7 @@ import { AppLayout } from "./components/layout/app-layout";
 import { HealthPage } from "./pages/health";
 import { IntegrationsPage } from "./pages/integrations";
 import { KnowledgePage } from "./pages/knowledge";
+import { LandingPage } from "./pages/landing";
 import { LoginPage } from "./pages/login";
 import { OverviewPage } from "./pages/overview";
 import { RunDetailPage } from "./pages/run-detail";
@@ -17,6 +18,7 @@ import { UsagePage } from "./pages/usage";
 export function App() {
 	return (
 		<Routes>
+			<Route path="/welcome" element={<LandingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route element={<AppLayout />}>
 				<Route index element={<HealthPage />} />

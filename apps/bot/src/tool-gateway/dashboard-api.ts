@@ -5,6 +5,7 @@ import type { IntegrationWatcher } from "../integrations/watcher.js";
 import type { AuthContext } from "../middleware/auth.js";
 import { createAuthMiddleware } from "../middleware/auth.js";
 import type { ConnectionManager } from "../slack/connection-manager.js";
+import type { UsageLimiter } from "../usage/limiter.js";
 
 interface DashboardApiDeps {
 	config: EnvConfig;
@@ -13,6 +14,7 @@ interface DashboardApiDeps {
 	pdClient?: PipedreamClient;
 	integrationWatcher?: IntegrationWatcher;
 	disconnectApp?: (workspaceId: string, appSlug: string) => Promise<{ removed: string[] }>;
+	usageLimiter?: UsageLimiter;
 	logger: Logger;
 }
 
@@ -66,8 +68,16 @@ function getInitials(name: string): string {
 }
 
 export function createDashboardApi(deps: DashboardApiDeps) {
-	const { config, prisma, connectionManager, pdClient, integrationWatcher, disconnectApp, logger } =
-		deps;
+	const {
+		config,
+		prisma,
+		connectionManager,
+		pdClient,
+		integrationWatcher,
+		disconnectApp,
+		usageLimiter,
+		logger,
+	} = deps;
 	const auth = createAuthMiddleware({ config, prisma, logger });
 
 	async function getWorkspace(workspaceId?: string | null) {
@@ -365,7 +375,44 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 				outputTokens: t.outputTokens,
 			}));
 
-		return Response.json({ stats, chartData, threads });
+		let budget: Record<string, unknown> | undefined;
+		if (usageLimiter) {
+			const status = await usageLimiter.getBudgetStatus(workspace.id);
+			budget = {
+				limitCents: status.limitCents,
+				usedCents: status.usedCents,
+				remainingCents: status.remainingCents,
+				percentUsed: status.percentUsed,
+				resetsAt: status.resetsAt,
+			};
+		}
+
+		return Response.json({ stats, chartData, threads, budget });
+	}
+
+	async function handleGetBudget(workspaceId: string | null): Promise<Response> {
+		const workspace = await getWorkspace(workspaceId);
+		const settings = (workspace.settings as Record<string, unknown>) ?? {};
+		const budgetCents =
+			typeof settings.monthlyBudgetCents === "number" ? settings.monthlyBudgetCents : 2000;
+		return Response.json({ monthlyBudgetCents: budgetCents });
+	}
+
+	async function handleUpdateBudget(req: Request, workspaceId: string | null): Promise<Response> {
+		const { monthlyBudgetCents } = (await req.json()) as { monthlyBudgetCents: number };
+		if (typeof monthlyBudgetCents !== "number" || monthlyBudgetCents < 0) {
+			return Response.json(
+				{ error: "monthlyBudgetCents must be a non-negative number" },
+				{ status: 400 },
+			);
+		}
+		const workspace = await getWorkspace(workspaceId);
+		const settings = (workspace.settings as Record<string, unknown>) ?? {};
+		await prisma.workspace.update({
+			where: { id: workspace.id },
+			data: { settings: { ...settings, monthlyBudgetCents } },
+		});
+		return Response.json({ success: true });
 	}
 
 	async function handleTasks(workspaceId: string | null): Promise<Response> {
@@ -919,6 +966,10 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 					return await handleGetSettings(workspaceId);
 				if (req.method === "PUT" && pathname === "/api/settings/model")
 					return await handleUpdateModel(req, workspaceId);
+				if (req.method === "GET" && pathname === "/api/settings/budget")
+					return await handleGetBudget(workspaceId);
+				if (req.method === "PUT" && pathname === "/api/settings/budget")
+					return await handleUpdateBudget(req, workspaceId);
 
 				const runsIdMatch = pathname.match(/^\/api\/runs\/([^/]+)$/);
 

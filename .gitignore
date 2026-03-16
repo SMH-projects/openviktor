@@ -31,3 +31,10 @@ coverage/
 # OMC state
 .omc/
 infra/modal/__pycache__/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate*
+infra/terraform.tfvars
+infra/.terraform.lock.hcl
+.vercel

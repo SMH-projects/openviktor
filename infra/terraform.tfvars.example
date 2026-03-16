@@ -1,0 +1,9 @@
+project_id  = "openviktor-prod"
+region      = "europe-west1"
+domain      = "api.openviktor.com"
+db_tier     = "db-f1-micro"
+db_password = "CHANGE_ME"
+github_repo = "zggf-zggf/openviktor"
+
+cloud_run_min_instances = 1
+cloud_run_max_instances = 3
