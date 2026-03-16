@@ -16,15 +16,11 @@ export interface AuthMiddlewareConfig {
 	logger: Logger;
 }
 
-function signJwt(
-	payload: Record<string, unknown>,
-	secret: string,
-	expiresInMs = 86_400_000,
-): string {
+function signJwt(payload: Record<string, unknown>, secret: string, expiresInSec = 86_400): string {
 	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-	const now = Date.now();
+	const now = Math.floor(Date.now() / 1000);
 	const body = Buffer.from(
-		JSON.stringify({ ...payload, iat: now, exp: now + expiresInMs }),
+		JSON.stringify({ ...payload, iat: now, exp: now + expiresInSec }),
 	).toString("base64url");
 	const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
 	return `${header}.${body}.${signature}`;
@@ -42,7 +38,7 @@ function verifyJwt(token: string, secret: string): Record<string, unknown> | nul
 
 	try {
 		const payload = JSON.parse(Buffer.from(body, "base64url").toString());
-		if (payload.exp && payload.exp < Date.now()) return null;
+		if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
 		return payload;
 	} catch {
 		return null;

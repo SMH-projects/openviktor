@@ -35,10 +35,10 @@ export interface OAuthHandlerConfig {
 
 function signSessionJwt(payload: Record<string, unknown>, secret: string): string {
 	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-	const now = Date.now();
-	const body = Buffer.from(
-		JSON.stringify({ ...payload, iat: now, exp: now + 86_400_000 }),
-	).toString("base64url");
+	const now = Math.floor(Date.now() / 1000);
+	const body = Buffer.from(JSON.stringify({ ...payload, iat: now, exp: now + 86_400 })).toString(
+		"base64url",
+	);
 	const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
 	return `${header}.${body}.${signature}`;
 }
@@ -195,11 +195,14 @@ export function createOAuthHandler(deps: OAuthHandlerConfig) {
 
 			// Set session cookie and redirect to dashboard
 			const jwtSecret = encryptionKey;
-			const token = signSessionJwt({
-				sub: installerUserId ?? teamName,
-				mode: "slack-oauth",
-				slackUserId: installerUserId,
-			}, jwtSecret);
+			const token = signSessionJwt(
+				{
+					sub: installerUserId ?? teamName,
+					mode: "slack-oauth",
+					slackUserId: installerUserId,
+				},
+				jwtSecret,
+			);
 			// Derive the web app URL from the API base URL (api.X.com → X.com)
 			const webUrl = baseUrl.replace(/\/$/, "").replace(/^(https?:\/\/)api\./, "$1");
 			const secure = config.NODE_ENV === "production" ? "; Secure" : "";
