@@ -90,10 +90,26 @@ export class PipedreamClient {
 		if (opts?.q) params.set("q", opts.q);
 		if (opts?.hasActions) params.set("has_actions", "true");
 		if (opts?.limit) params.set("limit", String(opts.limit));
+		if (opts?.offset) params.set("offset", String(opts.offset));
 		const qs = params.toString();
 		const path = `/connect/apps${qs ? `?${qs}` : ""}`;
 		const result = await this.request<{ data: PipedreamApp[] }>("GET", path);
 		return result.data;
+	}
+
+	async listAllApps(opts?: Omit<PipedreamListAppsOptions, "limit" | "offset">): Promise<PipedreamApp[]> {
+		const pageSize = 200;
+		const allApps: PipedreamApp[] = [];
+		let offset = 0;
+
+		while (true) {
+			const page = await this.listApps({ ...opts, limit: pageSize, offset });
+			allApps.push(...page);
+			if (page.length < pageSize) break;
+			offset += pageSize;
+		}
+
+		return allApps;
 	}
 
 	async listActions(opts: PipedreamListActionsOptions): Promise<PipedreamAction[]> {

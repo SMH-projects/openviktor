@@ -80,6 +80,26 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	} = deps;
 	const auth = createAuthMiddleware({ config, prisma, logger });
 
+	// Cache all Pipedream apps (refreshed every 10 minutes)
+	let cachedApps: { slug: string; name: string; description: string; imgSrc?: string; categories: string[] }[] = [];
+	let cacheExpiry = 0;
+	async function getAllPdApps() {
+		if (!pdClient) return [];
+		const now = Date.now();
+		if (cachedApps.length > 0 && now < cacheExpiry) return cachedApps;
+		const pdApps = await pdClient.listAllApps({ hasActions: true });
+		cachedApps = pdApps.map((app) => ({
+			slug: app.name_slug,
+			name: app.name,
+			description: app.description ?? "",
+			imgSrc: app.img_src,
+			categories: app.categories ?? [],
+		}));
+		cacheExpiry = now + 600_000;
+		logger.info({ count: cachedApps.length }, "Refreshed Pipedream apps cache");
+		return cachedApps;
+	}
+
 	async function getWorkspace(workspaceId?: string | null) {
 		if (!workspaceId) {
 			throw new Error("Workspace ID is required. Pass X-Workspace-Id header.");
@@ -156,44 +176,13 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 		};
 		const appsMap = new Map<string, AppInfo>();
 
-		if (pdClient) {
-			const pdApps = await pdClient.listApps({
-				hasActions: true,
-				limit: 200,
-				...(search ? { q: search } : {}),
-			});
-			for (const app of pdApps) {
-				appsMap.set(app.name_slug, {
-					slug: app.name_slug,
-					name: app.name,
-					description: app.description ?? "",
-					imgSrc: app.img_src,
-					categories: app.categories ?? [],
-					provider: "pipedream",
-				});
-			}
-
-			const missingSlugs = accounts
-				.filter((a) => a.provider === "pipedream" && !appsMap.has(a.appSlug))
-				.map((a) => a.appSlug);
-			if (missingSlugs.length > 0) {
-				const lookups = await Promise.all(
-					missingSlugs.map((slug) => pdClient!.listApps({ q: slug, limit: 1 })),
-				);
-				for (const result of lookups) {
-					if (result.length > 0) {
-						const app = result[0];
-						appsMap.set(app.name_slug, {
-							slug: app.name_slug,
-							name: app.name,
-							description: app.description ?? "",
-							imgSrc: app.img_src,
-							categories: app.categories ?? [],
-							provider: "pipedream",
-						});
-					}
-				}
-			}
+		const allPdApps = await getAllPdApps();
+		const searchLower = search.toLowerCase();
+		const filteredPdApps = search
+			? allPdApps.filter((a) => a.name.toLowerCase().includes(searchLower) || a.slug.includes(searchLower))
+			: allPdApps;
+		for (const app of filteredPdApps) {
+			appsMap.set(app.slug, { ...app, provider: "pipedream" });
 		}
 
 		for (const account of accounts) {

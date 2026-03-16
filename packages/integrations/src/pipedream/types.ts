@@ -62,6 +62,7 @@ export interface PipedreamListAppsOptions {
 	q?: string;
 	hasActions?: boolean;
 	limit?: number;
+	offset?: number;
 }
 
 export interface PipedreamListActionsOptions {
