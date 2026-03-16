@@ -33,6 +33,16 @@ export interface OAuthHandlerConfig {
 	logger: Logger;
 }
 
+function signSessionJwt(payload: Record<string, unknown>, secret: string): string {
+	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+	const now = Date.now();
+	const body = Buffer.from(
+		JSON.stringify({ ...payload, iat: now, exp: now + 86_400_000 }),
+	).toString("base64url");
+	const signature = createHmac("sha256", secret).update(`${header}.${body}`).digest("base64url");
+	return `${header}.${body}.${signature}`;
+}
+
 function generateState(secret: string): string {
 	const timestamp = Date.now().toString();
 	const nonce = randomBytes(16).toString("hex");
@@ -183,9 +193,24 @@ export function createOAuthHandler(deps: OAuthHandlerConfig) {
 
 			logger.info({ teamId, teamName, workspaceId: workspace.id }, "Workspace installed via OAuth");
 
-			// Redirect to dashboard
-			const dashboardUrl = baseUrl.replace(/\/$/, "");
-			return Response.redirect(`${dashboardUrl}/`, 302);
+			// Set session cookie and redirect to dashboard
+			const jwtSecret = encryptionKey;
+			const token = signSessionJwt({
+				sub: installerUserId ?? teamName,
+				mode: "slack-oauth",
+				slackUserId: installerUserId,
+			}, jwtSecret);
+			// Derive the web app URL from the API base URL (api.X.com → X.com)
+			const webUrl = baseUrl.replace(/\/$/, "").replace(/^(https?:\/\/)api\./, "$1");
+			const secure = config.NODE_ENV === "production" ? "; Secure" : "";
+			const domain = new URL(baseUrl).hostname.replace(/^api\./, "");
+			return new Response(null, {
+				status: 302,
+				headers: {
+					Location: `${webUrl}/dashboard`,
+					"Set-Cookie": `ov_session=${token}; HttpOnly; SameSite=Lax; Path=/; Domain=.${domain}; Max-Age=86400${secure}`,
+				},
+			});
 		} catch (err) {
 			logger.error({ err }, "OAuth callback failed");
 			return new Response("Installation failed. Please try again.", { status: 500 });

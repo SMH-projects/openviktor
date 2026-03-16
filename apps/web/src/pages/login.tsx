@@ -16,7 +16,7 @@ export function LoginPage() {
 		setLoading(true);
 		try {
 			await login(username, password);
-			navigate("/");
+			navigate("/dashboard");
 		} catch (err) {
 			if (err instanceof Error && err.message.includes("401")) {
 				setError("Invalid credentials");

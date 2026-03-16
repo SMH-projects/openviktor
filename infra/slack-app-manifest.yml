@@ -14,7 +14,7 @@ features:
 
 oauth_config:
   redirect_urls:
-    - https://openviktor.com/slack/oauth/callback
+    - https://api.openviktor.com/slack/oauth/callback
   scopes:
     bot:
       - app_mentions:read
@@ -39,6 +39,7 @@ oauth_config:
 settings:
   event_subscriptions:
     request_url: https://api.openviktor.com/slack/events
+
     bot_events:
       - app_mention
       - message.channels

@@ -18,10 +18,11 @@ import { UsagePage } from "./pages/usage";
 export function App() {
 	return (
 		<Routes>
+			<Route index element={<LandingPage />} />
 			<Route path="/welcome" element={<LandingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route element={<AppLayout />}>
-				<Route index element={<HealthPage />} />
+				<Route path="dashboard" element={<HealthPage />} />
 				<Route path="overview" element={<OverviewPage />} />
 				<Route path="runs" element={<RunsPage />} />
 				<Route path="runs/:id" element={<RunDetailPage />} />
