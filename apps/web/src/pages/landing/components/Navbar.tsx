@@ -79,14 +79,14 @@ export default function Navbar() {
 						href="/login"
 						className="text-sm text-[#6B6863] hover:text-[#111] transition-colors hidden sm:block"
 					>
-						Sign in
+						Dashboard
 					</a>
 					<a
 						href="https://github.com/zggf-zggf/openviktor"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium hover:border-[#111] hover:text-[#111] transition-colors"
-						style={{ borderColor: "#d6eaef", color: "#6B6863" }}
+						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-colors"
+						style={{ borderColor: "#1e6a8a", color: "#1e6a8a", background: "rgba(30,106,138,0.06)" }}
 					>
 						<svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
 							<title>GitHub</title>
@@ -144,7 +144,7 @@ export default function Navbar() {
 					))}
 					<div className="flex gap-3 pt-2 border-t border-[#d6eaef]">
 						<a href="/login" className="text-sm text-[#6B6863] hover:text-[#111]">
-							Sign in
+							Dashboard
 						</a>
 						<a
 							href="/slack/oauth/install"
