@@ -945,6 +945,15 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 					return Response.json({ error: "Unauthorized" }, { status: 401 });
 				}
 
+				if (req.method === "GET" && pathname === "/api/me") {
+					return Response.json({
+						username: authCtx.username,
+						mode: authCtx.mode,
+						isAdmin: authCtx.mode === "basic",
+						workspaceIds: authCtx.workspaceIds,
+					});
+				}
+
 				const workspaceId = auth.resolveWorkspaceId(req, authCtx);
 
 				if (req.method === "GET" && pathname === "/api/workspaces")

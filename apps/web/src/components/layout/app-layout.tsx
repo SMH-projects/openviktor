@@ -15,11 +15,11 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { getWorkspaces, isAuthError } from "../../lib/api";
+import { getMe, getWorkspaces, isAuthError } from "../../lib/api";
 import { cn } from "../../lib/utils";
 
-const navigation = [
-	{ name: "Status", href: "/", icon: Shield },
+const adminNavigation = [
+	{ name: "Status", href: "/dashboard", icon: Shield },
 	{ name: "Overview", href: "/overview", icon: LayoutDashboard },
 	{ name: "Agent Runs", href: "/runs", icon: Activity },
 	{ name: "Tools", href: "/tools", icon: Wrench },
@@ -31,11 +31,26 @@ const navigation = [
 	{ name: "Settings", href: "/settings", icon: Settings },
 ];
 
+const userNavigation = [
+	{ name: "Agent Runs", href: "/runs", icon: Activity },
+	{ name: "Threads", href: "/threads", icon: MessageSquare },
+	{ name: "Knowledge", href: "/knowledge", icon: Brain },
+	{ name: "Usage", href: "/usage", icon: DollarSign },
+	{ name: "Tasks", href: "/tasks", icon: Calendar },
+	{ name: "Integrations", href: "/integrations", icon: Plug },
+];
+
 export function AppLayout() {
 	const navigate = useNavigate();
 	const { data, error } = useQuery({
 		queryKey: ["workspaces"],
 		queryFn: getWorkspaces,
+		retry: false,
+	});
+
+	const { data: me } = useQuery({
+		queryKey: ["me"],
+		queryFn: getMe,
 		retry: false,
 	});
 
@@ -51,6 +66,10 @@ export function AppLayout() {
 		}
 	}, [data]);
 
+	const isAdmin = me?.isAdmin ?? false;
+	const navigation = isAdmin ? adminNavigation : userNavigation;
+	const label = isAdmin ? "Admin Dashboard" : "Dashboard";
+
 	return (
 		<div className="flex h-screen">
 			<aside className="flex w-60 flex-col border-r border-slate-200 bg-white">
@@ -63,7 +82,7 @@ export function AppLayout() {
 						<NavLink
 							key={item.href}
 							to={item.href}
-							end={item.href === "/"}
+							end={item.href === "/dashboard"}
 							className={({ isActive }) =>
 								cn(
 									"flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
@@ -81,7 +100,7 @@ export function AppLayout() {
 				<div className="border-t border-slate-200 p-3">
 					<div className="flex items-center gap-2 text-xs text-slate-400">
 						<Bot className="h-3.5 w-3.5" />
-						<span>Admin Dashboard</span>
+						<span>{label}</span>
 					</div>
 				</div>
 			</aside>

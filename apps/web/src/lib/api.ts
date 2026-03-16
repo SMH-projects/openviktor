@@ -252,6 +252,17 @@ export function login(username: string, password: string): Promise<{ success: bo
 	});
 }
 
+export interface UserInfo {
+	username: string;
+	mode: "basic" | "slack-oauth";
+	isAdmin: boolean;
+	workspaceIds?: string[];
+}
+
+export function getMe(): Promise<UserInfo> {
+	return fetchApi("/me");
+}
+
 export function isAuthError(error: unknown): boolean {
 	return error instanceof AuthError;
 }
