@@ -86,7 +86,11 @@ export default function Navbar() {
 						target="_blank"
 						rel="noopener noreferrer"
 						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-colors"
-						style={{ borderColor: "#1e6a8a", color: "#1e6a8a", background: "rgba(30,106,138,0.06)" }}
+						style={{
+							borderColor: "#1e6a8a",
+							color: "#1e6a8a",
+							background: "rgba(30,106,138,0.06)",
+						}}
 					>
 						<svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
 							<title>GitHub</title>

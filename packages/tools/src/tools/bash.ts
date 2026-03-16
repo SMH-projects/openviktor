@@ -72,6 +72,7 @@ export const bashExecutor: ToolExecutor = async (args, ctx) => {
 			}
 		});
 
+		// biome-ignore lint/suspicious/noExplicitAny: Bun's ChildProcessByStdio lacks EventEmitter.on()
 		(child as any).on("close", (code: number | null, signal: string | null) => {
 			const output: Record<string, unknown> = {
 				exit_code: code ?? -1,
@@ -91,6 +92,7 @@ export const bashExecutor: ToolExecutor = async (args, ctx) => {
 			resolve({ output, durationMs: 0 });
 		});
 
+		// biome-ignore lint/suspicious/noExplicitAny: Bun's ChildProcessByStdio lacks EventEmitter.on()
 		(child as any).on("error", (err: Error) => {
 			resolve({
 				output: null,
