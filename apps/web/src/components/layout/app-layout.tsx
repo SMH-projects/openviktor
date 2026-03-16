@@ -56,7 +56,7 @@ export function AppLayout() {
 
 	useEffect(() => {
 		if (error && isAuthError(error)) {
-			navigate("/login");
+			navigate("/");
 		}
 	}, [error, navigate]);
 

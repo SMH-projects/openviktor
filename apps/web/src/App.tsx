@@ -4,7 +4,6 @@ import { HealthPage } from "./pages/health";
 import { IntegrationsPage } from "./pages/integrations";
 import { KnowledgePage } from "./pages/knowledge";
 import { LandingPage } from "./pages/landing";
-import { LoginPage } from "./pages/login";
 import { OverviewPage } from "./pages/overview";
 import { RunDetailPage } from "./pages/run-detail";
 import { RunsPage } from "./pages/runs";
@@ -20,7 +19,6 @@ export function App() {
 		<Routes>
 			<Route index element={<LandingPage />} />
 			<Route path="/welcome" element={<LandingPage />} />
-			<Route path="/login" element={<LoginPage />} />
 			<Route element={<AppLayout />}>
 				<Route path="dashboard" element={<HealthPage />} />
 				<Route path="overview" element={<OverviewPage />} />

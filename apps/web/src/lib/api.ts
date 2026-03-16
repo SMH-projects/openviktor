@@ -247,13 +247,6 @@ export interface SkillItem {
 
 // ─── Auth ───────────────────────────────────────────────
 
-export function login(username: string, password: string): Promise<{ success: boolean }> {
-	return fetchApi("/auth/login", {
-		method: "POST",
-		body: JSON.stringify({ username, password }),
-	});
-}
-
 export interface UserInfo {
 	username: string;
 	mode: "basic" | "slack-oauth";

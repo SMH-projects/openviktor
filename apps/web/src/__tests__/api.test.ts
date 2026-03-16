@@ -101,18 +101,6 @@ describe("API client", () => {
 		expect(url).toContain("abc%2F123");
 	});
 
-	it("sends POST for login", async () => {
-		mockJsonResponse({ success: true });
-		await api.login("admin", "pass");
-		expect(mockFetch).toHaveBeenCalledWith(
-			"/api/auth/login",
-			expect.objectContaining({
-				method: "POST",
-				body: JSON.stringify({ username: "admin", password: "pass" }),
-			}),
-		);
-	});
-
 	it("sends PUT for updateModel", async () => {
 		mockJsonResponse({ success: true });
 		await api.updateModel("claude-opus-4-6");
