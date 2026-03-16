@@ -98,7 +98,7 @@ export class PipedreamClient {
 	}
 
 	async listAllApps(opts?: Omit<PipedreamListAppsOptions, "limit" | "offset">): Promise<PipedreamApp[]> {
-		const pageSize = 200;
+		const pageSize = 100;
 		const allApps: PipedreamApp[] = [];
 		let offset = 0;
 
