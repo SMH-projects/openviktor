@@ -4,10 +4,10 @@
 
 <p align="center">
   <a href="https://github.com/zggf-zggf/openviktor/actions/workflows/ci.yml"><img src="https://github.com/zggf-zggf/openviktor/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/zggf-zggf/openviktor?color=6366f1" alt="MIT License"></a>
-  <a href="https://github.com/zggf-zggf/openviktor/issues"><img src="https://img.shields.io/github/issues/zggf-zggf/openviktor?color=8b5cf6" alt="Issues"></a>
-  <a href="https://github.com/zggf-zggf/openviktor/stargazers"><img src="https://img.shields.io/github/stars/zggf-zggf/openviktor?style=flat&color=6366f1" alt="Stars"></a>
-  <img src="https://img.shields.io/badge/runtime-Bun-f9a8d4" alt="Bun">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/zggf-zggf/openviktor?color=1e6a8a" alt="MIT License"></a>
+  <a href="https://github.com/zggf-zggf/openviktor/issues"><img src="https://img.shields.io/github/issues/zggf-zggf/openviktor?color=4da8b5" alt="Issues"></a>
+  <a href="https://github.com/zggf-zggf/openviktor/stargazers"><img src="https://img.shields.io/github/stars/zggf-zggf/openviktor?style=flat&color=1e6a8a" alt="Stars"></a>
+  <img src="https://img.shields.io/badge/runtime-Bun-5bbcd6" alt="Bun">
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white" alt="TypeScript Strict">
   <img src="https://img.shields.io/badge/self--hosted-Docker%20Compose-2496ed?logo=docker&logoColor=white" alt="Docker Compose">
 </p>

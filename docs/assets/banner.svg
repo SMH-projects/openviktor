@@ -1,17 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" fill="none">
   <defs>
     <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0f0f23;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#1a1a3e;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#0d0d2b;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#f7fbfd;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#eef7fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e8f5f8;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#1e6a8a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4da8b5;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#5bbcd6;stop-opacity:0.25" />
+      <stop offset="100%" style="stop-color:#4da8b5;stop-opacity:0" />
     </linearGradient>
     <filter id="blur1">
       <feGaussianBlur in="SourceGraphic" stdDeviation="60" />
@@ -19,18 +19,15 @@
     <filter id="blur2">
       <feGaussianBlur in="SourceGraphic" stdDeviation="40" />
     </filter>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#6366f1" flood-opacity="0.5"/>
-    </filter>
     <linearGradient id="grid-line" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0" />
-      <stop offset="50%" style="stop-color:#6366f1;stop-opacity:0.08" />
-      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#1e6a8a;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#1e6a8a;stop-opacity:0.06" />
+      <stop offset="100%" style="stop-color:#1e6a8a;stop-opacity:0" />
     </linearGradient>
     <linearGradient id="grid-line-v" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0" />
-      <stop offset="50%" style="stop-color:#6366f1;stop-opacity:0.08" />
-      <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#1e6a8a;stop-opacity:0" />
+      <stop offset="50%" style="stop-color:#1e6a8a;stop-opacity:0.06" />
+      <stop offset="100%" style="stop-color:#1e6a8a;stop-opacity:0" />
     </linearGradient>
   </defs>
 
@@ -51,68 +48,68 @@
   </g>
 
   <!-- Ambient glow orbs -->
-  <circle cx="250" cy="200" r="200" fill="#6366f1" opacity="0.07" filter="url(#blur1)"/>
-  <circle cx="900" cy="150" r="180" fill="#8b5cf6" opacity="0.06" filter="url(#blur1)"/>
-  <circle cx="600" cy="350" r="150" fill="#a78bfa" opacity="0.04" filter="url(#blur2)"/>
+  <circle cx="250" cy="200" r="200" fill="#5bbcd6" opacity="0.08" filter="url(#blur1)"/>
+  <circle cx="900" cy="150" r="180" fill="#4da8b5" opacity="0.07" filter="url(#blur1)"/>
+  <circle cx="600" cy="350" r="150" fill="#1e6a8a" opacity="0.04" filter="url(#blur2)"/>
 
   <!-- Robot icon -->
-  <g transform="translate(160, 120)" filter="url(#shadow)">
+  <g transform="translate(160, 120)">
     <!-- Head -->
-    <rect x="20" y="40" width="80" height="70" rx="16" fill="none" stroke="#6366f1" stroke-width="3"/>
+    <rect x="20" y="40" width="80" height="70" rx="16" fill="none" stroke="#1e6a8a" stroke-width="3"/>
     <!-- Antenna -->
-    <line x1="60" y1="40" x2="60" y2="18" stroke="#6366f1" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="60" cy="12" r="6" fill="#8b5cf6"/>
+    <line x1="60" y1="40" x2="60" y2="18" stroke="#1e6a8a" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="60" cy="12" r="6" fill="#4da8b5"/>
     <!-- Eyes -->
-    <circle cx="42" cy="68" r="8" fill="#6366f1" opacity="0.9"/>
-    <circle cx="78" cy="68" r="8" fill="#6366f1" opacity="0.9"/>
-    <circle cx="44" cy="66" r="3" fill="#c7d2fe"/>
-    <circle cx="80" cy="66" r="3" fill="#c7d2fe"/>
+    <circle cx="42" cy="68" r="8" fill="#1e6a8a" opacity="0.9"/>
+    <circle cx="78" cy="68" r="8" fill="#1e6a8a" opacity="0.9"/>
+    <circle cx="44" cy="66" r="3" fill="#e8f5f8"/>
+    <circle cx="80" cy="66" r="3" fill="#e8f5f8"/>
     <!-- Mouth -->
-    <rect x="38" y="88" width="44" height="6" rx="3" fill="#6366f1" opacity="0.6"/>
+    <rect x="38" y="88" width="44" height="6" rx="3" fill="#1e6a8a" opacity="0.5"/>
     <!-- Body -->
-    <rect x="10" y="118" width="100" height="50" rx="12" fill="none" stroke="#6366f1" stroke-width="3"/>
+    <rect x="10" y="118" width="100" height="50" rx="12" fill="none" stroke="#1e6a8a" stroke-width="3"/>
     <!-- Chest light -->
-    <circle cx="60" cy="143" r="8" fill="#8b5cf6" opacity="0.7"/>
-    <circle cx="60" cy="143" r="4" fill="#c7d2fe"/>
+    <circle cx="60" cy="143" r="8" fill="#4da8b5" opacity="0.7"/>
+    <circle cx="60" cy="143" r="4" fill="#e8f5f8"/>
   </g>
 
   <!-- Title -->
-  <text x="380" y="175" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="72" font-weight="800" fill="white" letter-spacing="-2">
+  <text x="380" y="175" font-family="'Manrope', system-ui, -apple-system, sans-serif" font-size="72" font-weight="800" fill="#0f2038" letter-spacing="-2">
     Open<tspan fill="url(#accent)">Viktor</tspan>
   </text>
 
   <!-- Tagline -->
-  <text x="383" y="220" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" fill="#a5b4fc" font-weight="400" letter-spacing="0.5">
-    Open-source AI coworker for Slack
+  <text x="383" y="220" font-family="'Manrope', system-ui, -apple-system, sans-serif" font-size="22" fill="#1e6a8a" font-weight="400" letter-spacing="0.5">
+    Your AI employee for Slack
   </text>
 
   <!-- Decorative pills -->
   <g transform="translate(380, 248)">
-    <rect x="0" y="0" width="110" height="30" rx="15" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="1" stroke-opacity="0.3"/>
-    <text x="55" y="20" font-family="system-ui, sans-serif" font-size="13" fill="#a5b4fc" text-anchor="middle" font-weight="500">TypeScript</text>
+    <rect x="0" y="0" width="110" height="30" rx="15" fill="#1e6a8a" opacity="0.08" stroke="#1e6a8a" stroke-width="1" stroke-opacity="0.2"/>
+    <text x="55" y="20" font-family="'Manrope', system-ui, sans-serif" font-size="13" fill="#1e6a8a" text-anchor="middle" font-weight="500">TypeScript</text>
 
-    <rect x="122" y="0" width="110" height="30" rx="15" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="1" stroke-opacity="0.3"/>
-    <text x="177" y="20" font-family="system-ui, sans-serif" font-size="13" fill="#a5b4fc" text-anchor="middle" font-weight="500">Self-Hosted</text>
+    <rect x="122" y="0" width="110" height="30" rx="15" fill="#1e6a8a" opacity="0.08" stroke="#1e6a8a" stroke-width="1" stroke-opacity="0.2"/>
+    <text x="177" y="20" font-family="'Manrope', system-ui, sans-serif" font-size="13" fill="#1e6a8a" text-anchor="middle" font-weight="500">Self-Hosted</text>
 
-    <rect x="244" y="0" width="90" height="30" rx="15" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="1" stroke-opacity="0.3"/>
-    <text x="289" y="20" font-family="system-ui, sans-serif" font-size="13" fill="#a5b4fc" text-anchor="middle" font-weight="500">MIT</text>
+    <rect x="244" y="0" width="90" height="30" rx="15" fill="#1e6a8a" opacity="0.08" stroke="#1e6a8a" stroke-width="1" stroke-opacity="0.2"/>
+    <text x="289" y="20" font-family="'Manrope', system-ui, sans-serif" font-size="13" fill="#1e6a8a" text-anchor="middle" font-weight="500">MIT</text>
 
-    <rect x="346" y="0" width="130" height="30" rx="15" fill="#6366f1" opacity="0.15" stroke="#6366f1" stroke-width="1" stroke-opacity="0.3"/>
-    <text x="411" y="20" font-family="system-ui, sans-serif" font-size="13" fill="#a5b4fc" text-anchor="middle" font-weight="500">Docker Compose</text>
+    <rect x="346" y="0" width="130" height="30" rx="15" fill="#1e6a8a" opacity="0.08" stroke="#1e6a8a" stroke-width="1" stroke-opacity="0.2"/>
+    <text x="411" y="20" font-family="'Manrope', system-ui, sans-serif" font-size="13" fill="#1e6a8a" text-anchor="middle" font-weight="500">Docker Compose</text>
   </g>
 
   <!-- Slack icon stylized -->
-  <g transform="translate(1020, 140)" opacity="0.15">
-    <rect x="0" y="18" width="12" height="34" rx="6" fill="#e9d5ff"/>
-    <rect x="0" y="0" width="12" height="12" rx="6" fill="#e9d5ff"/>
-    <rect x="18" y="0" width="34" height="12" rx="6" fill="#e9d5ff"/>
-    <rect x="40" y="18" width="12" height="34" rx="6" fill="#c4b5fd"/>
-    <rect x="40" y="40" width="12" height="12" rx="6" fill="#c4b5fd"/>
-    <rect x="0" y="40" width="34" height="12" rx="6" fill="#c4b5fd"/>
-    <rect x="18" y="58" width="12" height="34" rx="6" fill="#a78bfa"/>
-    <rect x="0" y="78" width="34" height="12" rx="6" fill="#a78bfa"/>
-    <rect x="40" y="58" width="12" height="12" rx="6" fill="#a78bfa"/>
-    <rect x="18" y="0" width="12" height="34" rx="6" fill="#8b5cf6" transform="translate(70, 18) rotate(90) translate(-18, 0)"/>
+  <g transform="translate(1020, 140)" opacity="0.12">
+    <rect x="0" y="18" width="12" height="34" rx="6" fill="#1e6a8a"/>
+    <rect x="0" y="0" width="12" height="12" rx="6" fill="#1e6a8a"/>
+    <rect x="18" y="0" width="34" height="12" rx="6" fill="#1e6a8a"/>
+    <rect x="40" y="18" width="12" height="34" rx="6" fill="#4da8b5"/>
+    <rect x="40" y="40" width="12" height="12" rx="6" fill="#4da8b5"/>
+    <rect x="0" y="40" width="34" height="12" rx="6" fill="#4da8b5"/>
+    <rect x="18" y="58" width="12" height="34" rx="6" fill="#5bbcd6"/>
+    <rect x="0" y="78" width="34" height="12" rx="6" fill="#5bbcd6"/>
+    <rect x="40" y="58" width="12" height="12" rx="6" fill="#5bbcd6"/>
+    <rect x="18" y="0" width="12" height="34" rx="6" fill="#1e6a8a" transform="translate(70, 18) rotate(90) translate(-18, 0)"/>
   </g>
 
   <!-- Bottom accent line -->
