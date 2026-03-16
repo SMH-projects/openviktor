@@ -157,7 +157,10 @@ export function IntegrationsPage() {
 									const connected = connectedSlugs.has(app.slug);
 									const toolCount = toolCounts[app.slug] ?? 0;
 									return (
-										<Card key={app.slug} className={connected ? "ring-1 ring-emerald-200" : undefined}>
+										<Card
+											key={app.slug}
+											className={connected ? "ring-1 ring-emerald-200" : undefined}
+										>
 											<div className="flex items-start gap-3">
 												{app.imgSrc ? (
 													<img src={app.imgSrc} alt={app.name} className="h-10 w-10 rounded-lg" />

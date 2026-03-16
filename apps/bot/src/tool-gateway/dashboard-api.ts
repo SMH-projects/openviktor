@@ -120,13 +120,58 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 		});
 	}
 
+	type AppInfo = {
+		slug: string;
+		name: string;
+		description: string;
+		imgSrc?: string;
+		categories: string[];
+		provider: string;
+	};
+
+	function buildToolCounts(toolDefs: { name: string }[]): Record<string, number> {
+		const counts: Record<string, number> = {};
+		for (const tool of toolDefs) {
+			const match = tool.name.match(/^mcp_pd_([^_]+(?:_[^_]+)*?)_[^_]+$/);
+			if (match) {
+				counts[match[1]] = (counts[match[1]] ?? 0) + 1;
+			}
+		}
+		return counts;
+	}
+
+	async function fetchPipedreamApps(opts: {
+		search: string;
+		after?: string;
+		limit: number;
+	}): Promise<{ apps: AppInfo[]; endCursor: string | null; hasMore: boolean }> {
+		if (!pdClient) return { apps: [], endCursor: null, hasMore: false };
+		const result = await pdClient.listApps({
+			hasActions: true,
+			limit: opts.limit,
+			after: opts.after,
+			...(opts.search ? { q: opts.search } : {}),
+		});
+		const apps = result.data.map((app) => ({
+			slug: app.name_slug,
+			name: app.name,
+			description: app.description ?? "",
+			imgSrc: app.img_src,
+			categories: app.categories ?? [],
+			provider: "pipedream",
+		}));
+		const endCursor = result.page_info.end_cursor;
+		const hasMore = result.data.length === opts.limit && endCursor !== null;
+		return { apps, endCursor, hasMore };
+	}
+
 	async function handleIntegrations(url: URL, workspaceId: string | null): Promise<Response> {
 		const workspace = await getWorkspace(workspaceId);
 		const search = url.searchParams.get("search") ?? "";
 		const after = url.searchParams.get("after") ?? undefined;
 		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 100));
 
-		const [accounts, toolDefs] = await Promise.all([
+		const [accounts, toolDefs, pd] = await Promise.all([
 			prisma.integrationAccount.findMany({
 				where: { workspaceId: workspace.id, status: "ACTIVE" },
 				select: { appSlug: true, appName: true, provider: true },
@@ -135,50 +180,12 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 				where: { workspaceId: workspace.id, name: { startsWith: "mcp_pd_" } },
 				select: { name: true },
 			}),
+			fetchPipedreamApps({ search, after, limit }),
 		]);
 
 		const connectedSlugs = accounts.map((a) => a.appSlug);
-
-		const toolCounts: Record<string, number> = {};
-		for (const tool of toolDefs) {
-			const match = tool.name.match(/^mcp_pd_([^_]+(?:_[^_]+)*?)_[^_]+$/);
-			if (match) {
-				const slug = match[1];
-				toolCounts[slug] = (toolCounts[slug] ?? 0) + 1;
-			}
-		}
-
-		type AppInfo = {
-			slug: string;
-			name: string;
-			description: string;
-			imgSrc?: string;
-			categories: string[];
-			provider: string;
-		};
-
-		// Fetch one page from Pipedream (cursor-based pagination)
-		let apps: AppInfo[] = [];
-		let endCursor: string | null = null;
-		let hasMore = false;
-		if (pdClient) {
-			const result = await pdClient.listApps({
-				hasActions: true,
-				limit,
-				after,
-				...(search ? { q: search } : {}),
-			});
-			apps = result.data.map((app) => ({
-				slug: app.name_slug,
-				name: app.name,
-				description: app.description ?? "",
-				imgSrc: app.img_src,
-				categories: app.categories ?? [],
-				provider: "pipedream",
-			}));
-			endCursor = result.page_info.end_cursor;
-			hasMore = result.data.length === limit && endCursor !== null;
-		}
+		const toolCounts = buildToolCounts(toolDefs);
+		const { apps, endCursor, hasMore } = pd;
 
 		// Add connected apps not in current page (always show at top on first page)
 		if (!after) {
