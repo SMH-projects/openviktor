@@ -31,6 +31,7 @@ export interface OAuthHandlerConfig {
 	prisma: PrismaClient;
 	connectionManager: ConnectionManager;
 	logger: Logger;
+	onInstall?: (workspaceId: string, installerSlackUserId: string) => void;
 }
 
 function signSessionJwt(payload: Record<string, unknown>, secret: string): string {
@@ -192,6 +193,11 @@ export function createOAuthHandler(deps: OAuthHandlerConfig) {
 			}
 
 			logger.info({ teamId, teamName, workspaceId: workspace.id }, "Workspace installed via OAuth");
+
+			// Trigger proactive onboarding for new installs
+			if (installerUserId && deps.onInstall) {
+				deps.onInstall(workspace.id, installerUserId);
+			}
 
 			// Set session cookie and redirect to dashboard
 			const jwtSecret = encryptionKey;
