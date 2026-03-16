@@ -101,6 +101,8 @@ export interface IntegrationsData {
 	apps: IntegrationApp[];
 	connectedSlugs: string[];
 	toolCounts: Record<string, number>;
+	hasMore?: boolean;
+	offset?: number;
 }
 
 export interface TaskItem {
@@ -296,9 +298,17 @@ export function getTeam(): Promise<TeamData> {
 	return fetchApi("/team");
 }
 
-export function getIntegrations(search?: string): Promise<IntegrationsData> {
-	const params = search ? `?search=${encodeURIComponent(search)}` : "";
-	return fetchApi(`/integrations${params}`);
+export function getIntegrations(opts?: {
+	search?: string;
+	offset?: number;
+	limit?: number;
+}): Promise<IntegrationsData> {
+	const params = new URLSearchParams();
+	if (opts?.search) params.set("search", opts.search);
+	if (opts?.offset) params.set("offset", String(opts.offset));
+	if (opts?.limit) params.set("limit", String(opts.limit));
+	const qs = params.toString();
+	return fetchApi(`/integrations${qs ? `?${qs}` : ""}`);
 }
 
 export function connectIntegration(appSlug: string): Promise<{ connectUrl: string }> {

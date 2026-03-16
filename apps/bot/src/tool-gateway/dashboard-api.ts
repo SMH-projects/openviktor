@@ -80,26 +80,6 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	} = deps;
 	const auth = createAuthMiddleware({ config, prisma, logger });
 
-	// Cache all Pipedream apps (refreshed every 10 minutes)
-	let cachedApps: { slug: string; name: string; description: string; imgSrc?: string; categories: string[] }[] = [];
-	let cacheExpiry = 0;
-	async function getAllPdApps() {
-		if (!pdClient) return [];
-		const now = Date.now();
-		if (cachedApps.length > 0 && now < cacheExpiry) return cachedApps;
-		const pdApps = await pdClient.listAllApps({ hasActions: true });
-		cachedApps = pdApps.map((app) => ({
-			slug: app.name_slug,
-			name: app.name,
-			description: app.description ?? "",
-			imgSrc: app.img_src,
-			categories: app.categories ?? [],
-		}));
-		cacheExpiry = now + 600_000;
-		logger.info({ count: cachedApps.length }, "Refreshed Pipedream apps cache");
-		return cachedApps;
-	}
-
 	async function getWorkspace(workspaceId?: string | null) {
 		if (!workspaceId) {
 			throw new Error("Workspace ID is required. Pass X-Workspace-Id header.");
@@ -143,6 +123,8 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	async function handleIntegrations(url: URL, workspaceId: string | null): Promise<Response> {
 		const workspace = await getWorkspace(workspaceId);
 		const search = url.searchParams.get("search") ?? "";
+		const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+		const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 100));
 
 		const [accounts, toolDefs] = await Promise.all([
 			prisma.integrationAccount.findMany({
@@ -174,32 +156,45 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 			categories: string[];
 			provider: string;
 		};
-		const appsMap = new Map<string, AppInfo>();
 
-		const allPdApps = await getAllPdApps();
-		const searchLower = search.toLowerCase();
-		const filteredPdApps = search
-			? allPdApps.filter((a) => a.name.toLowerCase().includes(searchLower) || a.slug.includes(searchLower))
-			: allPdApps;
-		for (const app of filteredPdApps) {
-			appsMap.set(app.slug, { ...app, provider: "pipedream" });
+		// Fetch one page from Pipedream (server-side pagination)
+		let apps: AppInfo[] = [];
+		let hasMore = false;
+		if (pdClient) {
+			const pdApps = await pdClient.listApps({
+				hasActions: true,
+				limit,
+				offset,
+				...(search ? { q: search } : {}),
+			});
+			apps = pdApps.map((app) => ({
+				slug: app.name_slug,
+				name: app.name,
+				description: app.description ?? "",
+				imgSrc: app.img_src,
+				categories: app.categories ?? [],
+				provider: "pipedream",
+			}));
+			hasMore = pdApps.length === limit;
 		}
 
-		for (const account of accounts) {
-			if (!appsMap.has(account.appSlug)) {
-				appsMap.set(account.appSlug, {
-					slug: account.appSlug,
-					name: account.appName,
-					description: "",
-					categories: [],
-					provider: account.provider,
-				});
+		// Add connected apps not in current page (always show at top on first page)
+		if (offset === 0) {
+			const appSlugs = new Set(apps.map((a) => a.slug));
+			for (const account of accounts) {
+				if (!appSlugs.has(account.appSlug)) {
+					apps.unshift({
+						slug: account.appSlug,
+						name: account.appName,
+						description: "",
+						categories: [],
+						provider: account.provider,
+					});
+				}
 			}
 		}
 
-		const apps = Array.from(appsMap.values());
-
-		return Response.json({ apps, connectedSlugs, toolCounts });
+		return Response.json({ apps, connectedSlugs, toolCounts, hasMore, offset });
 	}
 
 	async function handleConnect(req: Request, workspaceId: string | null): Promise<Response> {

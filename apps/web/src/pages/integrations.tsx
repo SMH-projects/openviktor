@@ -1,19 +1,23 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "../components/ui/badge";
 import { Card } from "../components/ui/card";
 import { EmptyState } from "../components/ui/empty-state";
-import { connectIntegration, disconnectIntegration, getIntegrations } from "../lib/api";
+import {
+	connectIntegration,
+	disconnectIntegration,
+	getIntegrations,
+	type IntegrationApp,
+} from "../lib/api";
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 100;
 
 export function IntegrationsPage() {
 	const queryClient = useQueryClient();
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [mutError, setMutError] = useState<string | null>(null);
-	const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 	const sentinelRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
@@ -21,17 +25,19 @@ export function IntegrationsPage() {
 		return () => clearTimeout(timer);
 	}, [search]);
 
-	const prevSearch = useRef(debouncedSearch);
-	if (prevSearch.current !== debouncedSearch) {
-		prevSearch.current = debouncedSearch;
-		setVisibleCount(PAGE_SIZE);
-	}
-
-	const { data, isFetching, error } = useQuery({
-		queryKey: ["integrations", debouncedSearch],
-		queryFn: () => getIntegrations(debouncedSearch || undefined),
-		placeholderData: keepPreviousData,
-	});
+	const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, error } =
+		useInfiniteQuery({
+			queryKey: ["integrations", debouncedSearch],
+			queryFn: ({ pageParam = 0 }) =>
+				getIntegrations({
+					search: debouncedSearch || undefined,
+					offset: pageParam,
+					limit: PAGE_SIZE,
+				}),
+			initialPageParam: 0,
+			getNextPageParam: (lastPage) =>
+				lastPage.hasMore ? (lastPage.offset ?? 0) + PAGE_SIZE : undefined,
+		});
 
 	const connect = useMutation({
 		mutationFn: (slug: string) => connectIntegration(slug),
@@ -50,29 +56,30 @@ export function IntegrationsPage() {
 		onError: () => setMutError("Failed to disconnect integration"),
 	});
 
-	const apps = data?.apps ?? [];
-	const connectedSlugs = new Set(data?.connectedSlugs ?? []);
-	const toolCounts = data?.toolCounts ?? {};
+	const allApps: IntegrationApp[] = data?.pages.flatMap((p) => p.apps) ?? [];
+	const connectedSlugs = new Set(data?.pages[0]?.connectedSlugs ?? []);
+	const toolCounts = data?.pages[0]?.toolCounts ?? {};
 	const connectedCount = connectedSlugs.size;
-	const isSearching = debouncedSearch.length > 0;
 
-	const filtered = isSearching
-		? apps.filter((a) => a.name.toLowerCase().includes(debouncedSearch.toLowerCase()))
-		: apps;
+	// Deduplicate (connected apps appear on first page + may appear in later pages)
+	const seen = new Set<string>();
+	const apps = allApps.filter((a) => {
+		if (seen.has(a.slug)) return false;
+		seen.add(a.slug);
+		return true;
+	});
 
-	const sorted = [...filtered].sort((a, b) => {
+	// Sort: connected first
+	const sorted = [...apps].sort((a, b) => {
 		const aConn = connectedSlugs.has(a.slug) ? 0 : 1;
 		const bConn = connectedSlugs.has(b.slug) ? 0 : 1;
 		if (aConn !== bConn) return aConn - bConn;
 		return a.name.localeCompare(b.name);
 	});
 
-	const visible = sorted.slice(0, visibleCount);
-	const hasMore = visibleCount < sorted.length;
-
 	const loadMore = useCallback(() => {
-		if (hasMore) setVisibleCount((c) => c + PAGE_SIZE);
-	}, [hasMore]);
+		if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	useEffect(() => {
 		const sentinel = sentinelRef.current;
@@ -81,7 +88,7 @@ export function IntegrationsPage() {
 			(entries) => {
 				if (entries[0].isIntersecting) loadMore();
 			},
-			{ rootMargin: "200px" },
+			{ rootMargin: "400px" },
 		);
 		observer.observe(sentinel);
 		return () => observer.disconnect();
@@ -126,7 +133,7 @@ export function IntegrationsPage() {
 				<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
 				<input
 					type="text"
-					placeholder="Search 3,000+ integrations..."
+					placeholder="Search integrations..."
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 					className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
@@ -141,9 +148,7 @@ export function IntegrationsPage() {
 
 			<div className="flex items-center gap-2 text-xs text-slate-400">
 				<span>
-					{isSearching
-						? `${sorted.length} results`
-						: `Showing ${visible.length} of ${sorted.length} integrations`}
+					{sorted.length} integrations{hasNextPage ? "+" : ""}
 				</span>
 				{isFetching && (
 					<div className="h-3 w-3 animate-spin rounded-full border-2 border-slate-300 border-t-primary-600" />
@@ -153,20 +158,29 @@ export function IntegrationsPage() {
 			{sorted.length === 0 ? (
 				<Card>
 					<EmptyState
-						message={search ? "No integrations match your search" : "No integrations available"}
+						message={
+							search ? "No integrations match your search" : "No integrations available"
+						}
 					/>
 				</Card>
 			) : (
 				<>
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-						{visible.map((app) => {
+						{sorted.map((app) => {
 							const connected = connectedSlugs.has(app.slug);
 							const toolCount = toolCounts[app.slug] ?? 0;
 							return (
-								<Card key={app.slug} className={connected ? "ring-1 ring-emerald-200" : undefined}>
+								<Card
+									key={app.slug}
+									className={connected ? "ring-1 ring-emerald-200" : undefined}
+								>
 									<div className="flex items-start gap-3">
 										{app.imgSrc ? (
-											<img src={app.imgSrc} alt={app.name} className="h-10 w-10 rounded-lg" />
+											<img
+												src={app.imgSrc}
+												alt={app.name}
+												className="h-10 w-10 rounded-lg"
+											/>
 										) : (
 											<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-sm font-bold text-slate-400">
 												{app.name.charAt(0).toUpperCase()}
@@ -190,7 +204,9 @@ export function IntegrationsPage() {
 											)}
 											<div className="mt-1 flex items-center gap-2">
 												{toolCount > 0 && (
-													<span className="text-xs text-slate-400">{toolCount} tools</span>
+													<span className="text-xs text-slate-400">
+														{toolCount} tools
+													</span>
 												)}
 												{app.categories.length > 0 && (
 													<span className="text-xs text-slate-400">
@@ -225,7 +241,13 @@ export function IntegrationsPage() {
 							);
 						})}
 					</div>
-					{hasMore && <div ref={sentinelRef} className="h-1" />}
+					{hasNextPage && (
+						<div ref={sentinelRef} className="flex justify-center py-4">
+							{isFetchingNextPage && (
+								<div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-primary-600" />
+							)}
+						</div>
+					)}
 				</>
 			)}
 		</div>
