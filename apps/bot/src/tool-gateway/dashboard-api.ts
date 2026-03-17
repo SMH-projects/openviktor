@@ -919,6 +919,7 @@ export function createDashboardApi(deps: DashboardApiDeps) {
 	}
 
 	return {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: route dispatch table
 		fetch: async (req: Request): Promise<Response> => {
 			const url = new URL(req.url, "http://localhost");
 			const { pathname } = url;
