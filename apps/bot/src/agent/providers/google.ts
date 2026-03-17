@@ -320,6 +320,13 @@ export class GoogleProvider implements LLMProvider {
 			throw new LLMError("No response candidates returned from Gemini API");
 		}
 
+		if (!candidate.content?.parts) {
+			const reason = candidate.finishReason ?? "UNKNOWN";
+			throw new LLMError(
+				`Gemini returned no content (finishReason: ${reason}). The response may have been blocked by safety filters.`,
+			);
+		}
+
 		const { content, hasFunctionCalls } = parseResponseContent(candidate.content.parts);
 		const stopReason = mapFinishReason(candidate.finishReason, hasFunctionCalls);
 
