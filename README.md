@@ -13,31 +13,38 @@
 </p>
 
 <p align="center">
-  An autonomous AI agent that lives in your Slack workspace as a team member.<br/>
-  Open-source alternative to <a href="https://getviktor.com">getviktor.com</a> — self-hostable, extensible, MIT-licensed.
+  <strong>An autonomous AI agent that joins your Slack workspace as a team member.</strong><br/>
+  Open-source. Self-hosted. Extensible. MIT-licensed.<br/><br/>
+  <a href="https://matijacniacki.com/blog/openviktor">Read the story behind OpenViktor</a> · <a href="docs/self-hosting.md">Self-Hosting Guide</a> · <a href="https://github.com/zggf-zggf/openviktor/issues">Report a Bug</a>
 </p>
 
 ---
 
+## What is OpenViktor?
+
+OpenViktor is a fully autonomous AI teammate that lives in Slack. It reads messages, runs tools, learns from your team, and takes action — without leaving the chat. Think of it as hiring an AI employee that actually integrates into how your team already works.
+
+Built as an open-source alternative to [getviktor.com](https://getviktor.com).
+
 ## Features
 
-- **Conversational AI** — responds to mentions and DMs with contextually relevant, LLM-powered messages
-- **Persistent Memory** — learns from your team's interactions and accumulates knowledge over time
-- **Tool Execution** — extensible tool system with native tools and MCP protocol support
-- **Proactive Monitoring** — scheduled heartbeats, cron jobs, and workflow discovery
-- **Integrations** — connects to GitHub, Linear, and other tools your team already uses
-- **Self-Hosted** — runs on your infrastructure with Docker Compose, no vendor lock-in
+**Agent Runtime** — Multi-provider LLM engine (Claude, GPT, Gemini) with automatic retries, cost tracking, and usage limits per workspace.
+
+**20+ Built-in Tools** — File operations, bash execution, browser automation, git, grep, AI-powered search, Slack admin, image generation, and more. Every tool is sandboxed with a permission system.
+
+**Persistent Memory** — Learns from your team's conversations. Accumulates knowledge over time and recalls it when relevant.
+
+**Proactive Behaviors** — Scheduled heartbeats, workflow discovery, channel introductions, and onboarding DMs for new workspaces. It doesn't just respond — it initiates.
+
+**Integrations** — Connects to GitHub, Linear, and 2,000+ apps via Pipedream. Add custom API integrations through natural language.
+
+**Admin Dashboard** — Full management UI: monitor runs, inspect threads, manage tools, track usage and costs, configure integrations.
+
+**Multi-Workspace** — OAuth-based workspace connections with per-workspace isolation, usage limits, and cost controls.
+
+**Self-Hosted** — Runs entirely on your infrastructure. Docker Compose, PostgreSQL, Redis. No data leaves your network.
 
 ## Quick Start
-
-### Prerequisites
-
-- [Bun](https://bun.sh) >= 1.2
-- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
-- A [Slack app](https://api.slack.com/apps) with Socket Mode enabled
-- An [Anthropic API key](https://console.anthropic.com/)
-
-### One-Command Setup
 
 ```bash
 git clone https://github.com/zggf-zggf/openviktor.git
@@ -45,13 +52,20 @@ cd openviktor
 ./scripts/setup.sh
 ```
 
+The setup script handles dependencies, database, and config. You'll need:
+
+- [Bun](https://bun.sh) >= 1.2
+- [Docker](https://docs.docker.com/get-docker/) + Docker Compose
+- A [Slack app](https://api.slack.com/apps) with Socket Mode
+- An [Anthropic API key](https://console.anthropic.com/)
+
 <details>
 <summary><strong>Manual setup</strong></summary>
 
 ```bash
 bun install
 cp docker/.env.example .env
-# Edit .env with your Slack and Anthropic credentials
+# Edit .env with your credentials
 docker compose -f docker/docker-compose.yml up -d
 bun run db:generate
 bun run db:migrate
@@ -60,7 +74,7 @@ bun run dev
 
 </details>
 
-> For production deployment, see [Self-Hosting Guide](docs/self-hosting.md).
+> For production deployment, see the [Self-Hosting Guide](docs/self-hosting.md).
 
 ## Architecture
 
@@ -68,7 +82,8 @@ bun run dev
 openviktor/
 ├── apps/
 │   ├── bot/              # Slack bot + agent runtime
-│   └── web/              # Admin dashboard (Phase 12)
+│   ├── web/              # Admin dashboard (React + Vite)
+│   └── landing/          # Landing page (Next.js)
 ├── packages/
 │   ├── db/               # PostgreSQL schema (Prisma)
 │   ├── shared/           # Types, config, logger, errors
@@ -77,52 +92,35 @@ openviktor/
 └── docker/               # Docker Compose for self-hosting
 ```
 
-### Tech Stack
-
-| Component | Technology | Why |
-|-----------|-----------|-----|
-| Runtime | **Bun** | Fast, native TS, workspace support |
-| Language | **TypeScript** (strict) | Type safety across the stack |
-| Database | **PostgreSQL 16** + Prisma | Self-hostable, no vendor lock-in |
-| Cache | **Redis 7** (optional) | Concurrency control, rate limiting |
-| LLM | **Claude** primary | GPT and Gemini as future fallbacks |
-| Slack | **Bolt SDK** (Socket Mode) | No public URL needed |
-| Build | **Turborepo** | Cached parallel builds |
-| Lint | **Biome** | Fast, opinionated, single tool |
-| Test | **Vitest** + Playwright | Unit/integration + E2E |
-| Deploy | **Docker Compose** | Single command self-hosting |
+| Component | Technology |
+|-----------|-----------|
+| Runtime | **Bun** |
+| Language | **TypeScript** (strict) |
+| Database | **PostgreSQL 16** + Prisma |
+| Cache | **Redis 7** |
+| LLM | **Claude** / GPT / Gemini |
+| Slack | **Bolt SDK** (Socket Mode) |
+| Build | **Turborepo** |
+| Lint/Format | **Biome** |
+| Test | **Vitest** |
+| Deploy | **Docker Compose** |
 
 ## Development
 
 ```bash
-bun install                # Install dependencies
-docker compose -f docker/docker-compose.yml up -d  # Start PostgreSQL + Redis
-bun run db:generate        # Generate Prisma client
-bun run db:migrate         # Run migrations
-bun run dev                # Start dev server
-bun run test               # Run tests
-bun run lint               # Lint with Biome
-bun run typecheck          # TypeScript strict check
+bun install                                          # Install dependencies
+docker compose -f docker/docker-compose.yml up -d    # Start PostgreSQL + Redis
+bun run db:generate                                  # Generate Prisma client
+bun run db:migrate                                   # Run migrations
+bun run dev                                          # Start all services
+bun run test                                         # Run tests
+bun run lint                                         # Lint with Biome
+bun run typecheck                                    # TypeScript strict check
 ```
-
-## Roadmap
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 0 | Repository foundation — monorepo, CI, tooling | ✅ Done |
-| 1 | Slack Gateway — receive & log events | ✅ Done |
-| 2 | Tool registry & executors | Planned |
-| 3 | Memory & knowledge persistence | Planned |
-| 4 | GitHub integration | Planned |
-| 5 | Linear integration | Planned |
-| 6 | Heartbeat & proactive monitoring | Planned |
-| 7 | Admin dashboard | Planned |
 
 ## Contributing
 
-Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-Every implementation change is cross-validated against our [Viktor reverse-engineering docs](docs/viktor-reference/) to ensure behavioral fidelity.
+Contributions welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
