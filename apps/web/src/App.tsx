@@ -1,5 +1,7 @@
-import { Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { AppLayout } from "./components/layout/app-layout";
+import { capturePageView } from "./lib/posthog";
 import { HealthPage } from "./pages/health";
 import { IntegrationsPage } from "./pages/integrations";
 import { KnowledgePage } from "./pages/knowledge";
@@ -15,6 +17,12 @@ import { ToolsPage } from "./pages/tools";
 import { UsagePage } from "./pages/usage";
 
 export function App() {
+	const location = useLocation();
+
+	useEffect(() => {
+		capturePageView(window.origin + location.pathname + location.search);
+	}, [location]);
+
 	return (
 		<Routes>
 			<Route index element={<LandingPage />} />

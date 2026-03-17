@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Instrument_Serif, Manrope } from "next/font/google";
 import "./globals.css";
+import { PostHogProvider } from "./posthog-provider";
 
 const manrope = Manrope({
 	subsets: ["latin"],
@@ -46,7 +47,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 			<body
 				className={`${manrope.variable} ${instrumentSerif.variable} antialiased bg-background text-foreground`}
 			>
-				{children}
+				<PostHogProvider>{children}</PostHogProvider>
 			</body>
 		</html>
 	);

@@ -301,6 +301,14 @@ export class AgentRunner {
 			};
 		} catch (error) {
 			await this.markRunFailed(agentRun.id, error, Date.now() - startTime);
+			await this.prisma.thread
+				.update({
+					where: { id: thread.id },
+					data: { status: "WAITING", phase: ThreadPhase.IDLE },
+				})
+				.catch((resetErr) => {
+					this.logger.error({ threadId: thread.id, err: resetErr }, "Failed to reset thread phase after error");
+				});
 			throw error;
 		} finally {
 			await this.releaseOrchestratorResources(
