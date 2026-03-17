@@ -239,6 +239,7 @@ async function main(): Promise<void> {
 		slackToken: config.SLACK_BOT_TOKEN ?? "",
 		defaultModel: config.DEFAULT_MODEL,
 		encryptionKey: config.ENCRYPTION_KEY,
+		backend,
 	});
 
 	const cronTools = createCronToolExecutors(prisma, scheduler);

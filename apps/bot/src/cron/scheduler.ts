@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@openviktor/db";
 import { type Logger, type TriggerType, decrypt } from "@openviktor/shared";
+import type { ToolBackend } from "@openviktor/tools";
+import { ensureWorkspace } from "@openviktor/tools";
 import type { PromptContext } from "../agent/prompt.js";
 import type { AgentRunner, RunTrigger } from "../agent/runner.js";
 import { fetchActiveThreads } from "../thread/index.js";
@@ -24,6 +26,7 @@ export interface SchedulerConfig {
 	slackToken: string;
 	defaultModel: string;
 	encryptionKey?: string;
+	backend: ToolBackend;
 }
 
 interface CronJobRecord {
@@ -260,6 +263,7 @@ export class CronScheduler {
 				condCtx,
 				this.prisma,
 				this.logger,
+				this.config.backend,
 			);
 			if (!shouldRun) {
 				this.logger.info({ cronJobId: job.id, name: job.name }, "Condition not met, skipping");
@@ -358,7 +362,7 @@ export class CronScheduler {
 			const command = job.scriptCommand ?? job.agentPrompt;
 			this.logger.info({ cronJobId: job.id, name: job.name, command }, "Executing script cron");
 
-			const result = await this.runScript(command);
+			const result = await this.runScript(command, job.workspaceId);
 			const status = result.exitCode === 0 ? "COMPLETED" : "FAILED";
 			await this.updateJobAfterRun(job, status);
 
@@ -405,6 +409,7 @@ export class CronScheduler {
 				condCtx,
 				this.prisma,
 				this.logger,
+				this.config.backend,
 			);
 			if (!shouldRun) {
 				this.logger.info(
@@ -419,29 +424,29 @@ export class CronScheduler {
 		return true;
 	}
 
-	async runScript(command: string): Promise<ScriptResult> {
-		const { execFile } = await import("node:child_process");
-		const { promisify } = await import("node:util");
-		const execFileAsync = promisify(execFile);
+	async runScript(command: string, workspaceId: string): Promise<ScriptResult> {
+		const workspaceDir = await ensureWorkspace(workspaceId);
+		const ctx = { workspaceId, workspaceDir, timeoutMs: SCRIPT_TIMEOUT_MS };
+		const result = await this.config.backend.execute(
+			"bash",
+			{ command, timeout_ms: SCRIPT_TIMEOUT_MS },
+			ctx,
+		);
 
-		try {
-			const { stdout, stderr } = await execFileAsync("sh", ["-c", command], {
-				timeout: SCRIPT_TIMEOUT_MS,
-				maxBuffer: 1024 * 1024,
-			});
-			return { exitCode: 0, stdout, stderr };
-		} catch (error: unknown) {
-			const execError = error as {
-				code?: number;
-				stdout?: string;
-				stderr?: string;
-			};
-			return {
-				exitCode: execError.code ?? 1,
-				stdout: execError.stdout ?? "",
-				stderr: execError.stderr ?? "",
-			};
+		if (result.error) {
+			return { exitCode: 1, stdout: "", stderr: result.error };
 		}
+
+		const output = result.output as {
+			exit_code?: number;
+			stdout?: string;
+			stderr?: string;
+		} | null;
+		return {
+			exitCode: output?.exit_code ?? 0,
+			stdout: output?.stdout ?? "",
+			stderr: output?.stderr ?? "",
+		};
 	}
 
 	private async notifyJobFailure(job: CronJobRecord, errorMessage: string): Promise<void> {

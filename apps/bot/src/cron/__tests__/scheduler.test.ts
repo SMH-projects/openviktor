@@ -1,5 +1,11 @@
+import { spawn } from "node:child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CronScheduler } from "../scheduler.js";
+
+vi.mock("@openviktor/tools", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("@openviktor/tools")>();
+	return { ...actual, ensureWorkspace: async () => "/tmp" };
+});
 
 function createMockLogger() {
 	return {
@@ -51,11 +57,46 @@ function createMockPrisma(dueJobs: unknown[] = []) {
 	} as any;
 }
 
+function createMockBackend() {
+	return {
+		execute: vi.fn().mockImplementation(async (_tool: string, args: Record<string, unknown>) => {
+			const command = args.command as string;
+			return new Promise((resolve) => {
+				const child = spawn("bash", ["-c", command], {
+					timeout: 30_000,
+					stdio: ["ignore", "pipe", "pipe"],
+				});
+				let stdout = "";
+				let stderr = "";
+				child.stdout.on("data", (d: Buffer) => {
+					stdout += d.toString();
+				});
+				child.stderr.on("data", (d: Buffer) => {
+					stderr += d.toString();
+				});
+				// biome-ignore lint/suspicious/noExplicitAny: Bun's ChildProcessByStdio lacks EventEmitter.on()
+				(child as any).on("close", (code: number | null) => {
+					resolve({
+						output: { exit_code: code ?? 0, stdout, stderr },
+						durationMs: 0,
+					});
+				});
+				// biome-ignore lint/suspicious/noExplicitAny: Bun's ChildProcessByStdio lacks EventEmitter.on()
+				(child as any).on("error", (err: Error) => {
+					resolve({ output: null, durationMs: 0, error: err.message });
+				});
+			});
+		}),
+		// biome-ignore lint/suspicious/noExplicitAny: test mock
+	} as any;
+}
+
 const defaultConfig = {
 	checkIntervalMs: 30_000,
 	heartbeatEnabled: true,
 	slackToken: "xoxb-test",
 	defaultModel: "claude-sonnet-4-20250514",
+	backend: createMockBackend(),
 };
 
 describe("CronScheduler", () => {
@@ -469,7 +510,7 @@ describe("CronScheduler", () => {
 		it("captures stdout and exit code", async () => {
 			const prisma = createMockPrisma();
 			scheduler = new CronScheduler(prisma, createMockRunner(), createMockLogger(), defaultConfig);
-			const result = await scheduler.runScript("echo hello");
+			const result = await scheduler.runScript("echo hello", "ws-1");
 			expect(result.exitCode).toBe(0);
 			expect(result.stdout.trim()).toBe("hello");
 		});
@@ -477,7 +518,7 @@ describe("CronScheduler", () => {
 		it("captures stderr and non-zero exit code", async () => {
 			const prisma = createMockPrisma();
 			scheduler = new CronScheduler(prisma, createMockRunner(), createMockLogger(), defaultConfig);
-			const result = await scheduler.runScript("echo error >&2 && exit 42");
+			const result = await scheduler.runScript("echo error >&2 && exit 42", "ws-1");
 			expect(result.exitCode).toBe(42);
 			expect(result.stderr.trim()).toBe("error");
 		});
