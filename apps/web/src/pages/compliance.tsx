@@ -24,7 +24,14 @@ export function CompliancePage() {
 					<div className="border border-[#E5E2DC] rounded-xl p-6 bg-white">
 						<div className="flex items-center gap-3 mb-3">
 							<div className="w-10 h-10 rounded-full bg-[#f0eeeb] flex items-center justify-center">
-								<svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth={2}>
+								<svg
+									width={20}
+									height={20}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="#111"
+									strokeWidth={2}
+								>
 									<title>Shield</title>
 									<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
 								</svg>
@@ -33,8 +40,8 @@ export function CompliancePage() {
 						</div>
 						<p className="text-[#6B6863] text-sm leading-relaxed">
 							We are committed to achieving ISO 27001 certification. Our information security
-							management practices are being aligned with ISO 27001 standards to provide you with the
-							highest level of data protection.
+							management practices are being aligned with ISO 27001 standards to provide you with
+							the highest level of data protection.
 						</p>
 						<span className="inline-block mt-4 text-xs font-medium text-[#A8A49E] bg-[#f0eeeb] px-3 py-1 rounded-full">
 							In progress
@@ -44,7 +51,14 @@ export function CompliancePage() {
 					<div className="border border-[#E5E2DC] rounded-xl p-6 bg-white">
 						<div className="flex items-center gap-3 mb-3">
 							<div className="w-10 h-10 rounded-full bg-[#f0eeeb] flex items-center justify-center">
-								<svg width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="#111" strokeWidth={2}>
+								<svg
+									width={20}
+									height={20}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="#111"
+									strokeWidth={2}
+								>
 									<title>Lock</title>
 									<rect x={3} y={11} width={18} height={11} rx={2} ry={2} />
 									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
