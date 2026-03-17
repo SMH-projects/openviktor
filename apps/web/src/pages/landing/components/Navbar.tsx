@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 function HumalikeLogo({ height = 28 }: { height?: number }) {
 	return (
-		<a href="/" className="flex items-center gap-2">
+		<a href="/" className="flex items-center gap-1.5">
 			<img
 				src="/openviktor.png"
 				alt="Humalike"
@@ -13,8 +13,8 @@ function HumalikeLogo({ height = 28 }: { height?: number }) {
 				style={{
 					fontFamily: "var(--font-manrope,'Manrope',sans-serif)",
 					fontWeight: 700,
-					fontSize: height * 0.75,
-					letterSpacing: "0.13em",
+					fontSize: height * 0.85,
+					letterSpacing: "0.07em",
 					color: "#111",
 					lineHeight: 1,
 				}}
@@ -46,51 +46,46 @@ export default function Navbar() {
 			}}
 		>
 			<div className="max-w-7xl mx-auto px-6 h-[60px] flex items-center justify-between">
-				<HumalikeLogo height={22} />
+				<div className="flex items-center gap-8">
+					<HumalikeLogo height={20} />
 
-				{/* Desktop nav links */}
-				<div className="hidden md:flex items-center gap-8">
-					<a
-						href="#how-it-works"
-						className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
-					>
-						How it works
-					</a>
-					<a href="#pricing" className="text-sm text-[#6B6863] hover:text-[#111] transition-colors">
-						Pricing
-					</a>
-					<a
-						href="/use-cases"
-						className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
-					>
-						Use Cases
-					</a>
-					<button
-						type="button"
-						className="text-sm text-[#6B6863] hover:text-[#111] transition-colors bg-transparent border-none cursor-pointer p-0"
-					>
-						Contact Us
-					</button>
+					<div className="hidden md:flex items-center gap-6">
+						<a
+							href="#how-it-works"
+							className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
+						>
+							How it works
+						</a>
+						<a
+							href="#pricing"
+							className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
+						>
+							Pricing
+						</a>
+						<a
+							href="https://www.humalike.ai/"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
+						>
+							HUMALIKE
+						</a>
+					</div>
 				</div>
 
-				{/* Desktop CTA */}
 				<div className="flex items-center gap-3">
 					<a
-						href="/runs"
+						href="/login"
 						className="text-sm text-[#6B6863] hover:text-[#111] transition-colors hidden sm:block"
 					>
-						Dashboard
+						Sign in
 					</a>
 					<a
-						href="https://github.com/zggf-zggf/openviktor"
+						href="https://github.com/zggf-zggf/openviktor/"
 						target="_blank"
 						rel="noopener noreferrer"
-						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium transition-colors"
-						style={{
-							borderColor: "#1e6a8a",
-							color: "#1e6a8a",
-							background: "rgba(30,106,138,0.06)",
-						}}
+						className="hidden sm:inline-flex items-center gap-1.5 px-3 py-2 rounded-full border text-sm font-medium hover:border-[#111] hover:text-[#111] transition-colors"
+						style={{ borderColor: "#d6eaef", color: "#6B6863" }}
 					>
 						<svg width={14} height={14} viewBox="0 0 24 24" fill="currentColor">
 							<title>GitHub</title>
@@ -99,14 +94,13 @@ export default function Navbar() {
 						Star
 					</a>
 					<a
-						href="/slack/oauth/install"
+						href="/hire"
 						className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
 						style={{ background: "#111", color: "#fff" }}
 					>
-						Start Free
+						Hire now. Free
 					</a>
 
-					{/* Mobile hamburger */}
 					<button
 						type="button"
 						className="md:hidden flex flex-col justify-center items-center w-8 h-8 gap-[5px] bg-transparent border-none cursor-pointer p-0"
@@ -126,7 +120,6 @@ export default function Navbar() {
 				</div>
 			</div>
 
-			{/* Mobile menu */}
 			{mobileOpen && (
 				<div
 					className="md:hidden border-t border-[#d6eaef] px-6 py-5 flex flex-col gap-4"
@@ -135,26 +128,27 @@ export default function Navbar() {
 					{[
 						{ label: "How it works", href: "#how-it-works" },
 						{ label: "Pricing", href: "#pricing" },
-						{ label: "Use Cases", href: "/use-cases" },
+						{ label: "HUMALIKE", href: "https://www.humalike.ai/", external: true },
 					].map((l) => (
 						<a
 							key={l.label}
 							href={l.href}
 							className="text-sm text-[#6B6863] hover:text-[#111] transition-colors"
 							onClick={() => setMobileOpen(false)}
+							{...(l.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
 						>
 							{l.label}
 						</a>
 					))}
 					<div className="flex gap-3 pt-2 border-t border-[#d6eaef]">
-						<a href="/runs" className="text-sm text-[#6B6863] hover:text-[#111]">
-							Dashboard
+						<a href="/login" className="text-sm text-[#6B6863] hover:text-[#111]">
+							Sign in
 						</a>
 						<a
-							href="/slack/oauth/install"
+							href="/hire"
 							className="inline-flex items-center px-4 py-2 rounded-full bg-[#111] text-white text-sm font-medium hover:bg-[#333] transition-colors"
 						>
-							Start Free
+							Hire now. Free
 						</a>
 					</div>
 				</div>

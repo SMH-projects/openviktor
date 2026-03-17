@@ -1,38 +1,45 @@
+const pills = [
+	"Full context, fully applied",
+	"Takes initiative",
+	"Parallel execution",
+	"No vendor lock-in",
+];
+
 const rows = [
 	{
 		feature: "Monthly cost",
 		ours: "Free",
+		junior: "$2,000/mo",
 		theirs: "$5,000+/mo",
-		oursPills: null,
+		pills: false,
 	},
 	{
 		feature: "Onboarding time",
-		ours: "Under 10 minutes",
-		theirs: "Custom / weeks",
-		oursPills: null,
+		ours: "2 min",
+		junior: "5 min",
+		theirs: "5 min",
+		pills: false,
 	},
 	{
 		feature: "Working hours",
 		ours: "24/7",
-		theirs: "Business hours",
-		oursPills: null,
+		junior: "24/7",
+		theirs: "24/7",
+		pills: false,
 	},
 	{
 		feature: "Source code",
 		ours: "Fully open",
+		junior: "Proprietary",
 		theirs: "Proprietary",
-		oursPills: null,
+		pills: false,
 	},
 	{
 		feature: "Capabilities",
 		ours: null,
-		theirs: "Enterprise contracts required",
-		oursPills: [
-			"Full context, fully applied",
-			"Takes initiative",
-			"Parallel execution",
-			"No vendor lock-in",
-		],
+		junior: null,
+		theirs: null,
+		pills: true,
 	},
 ];
 
@@ -60,26 +67,29 @@ export default function Pricing() {
 				</div>
 
 				<div className="overflow-x-auto">
-					<div className="bg-white border border-[#E5E2DC] rounded-2xl overflow-hidden min-w-[340px]">
-						<div className="grid grid-cols-2 md:grid-cols-3 border-b border-[#E5E2DC]">
+					<div className="bg-white border border-[#E5E2DC] rounded-2xl overflow-hidden min-w-[480px]">
+						<div className="grid grid-cols-3 md:grid-cols-4 border-b border-[#E5E2DC]">
 							<div className="hidden md:block p-3 md:p-5" />
 							<div
 								className="p-3 md:p-5 md:border-l border-[#E5E2DC]"
 								style={{ background: "#1e6a8a" }}
 							>
 								<span className="text-white text-xs tracking-widest uppercase font-medium">
-									OpenHuma
+									OpenViktor
 								</span>
 							</div>
 							<div className="p-3 md:p-5 border-l border-[#E5E2DC]">
-								<span className="text-[#A8A49E] text-xs tracking-widest uppercase">Viktor</span>
+								<span className="text-[#A8A49E] text-xs tracking-widest uppercase">Junior</span>
+							</div>
+							<div className="p-3 md:p-5 border-l border-[#E5E2DC]">
+								<span className="text-[#A8A49E] text-xs tracking-widest uppercase">getviktor</span>
 							</div>
 						</div>
 
 						{rows.map((row, i) => (
 							<div
 								key={row.feature}
-								className={`grid grid-cols-2 md:grid-cols-3 ${i < rows.length - 1 ? "border-b border-[#E5E2DC]" : ""}`}
+								className={`grid grid-cols-3 md:grid-cols-4 ${i < rows.length - 1 ? "border-b border-[#E5E2DC]" : ""}`}
 							>
 								<div className="hidden md:block p-3 md:p-5">
 									<span className="text-[#6B6863] text-sm">{row.feature}</span>
@@ -89,11 +99,13 @@ export default function Pricing() {
 									className="p-3 md:p-5 md:border-l border-[#E5E2DC]"
 									style={{ background: "#e8f5f8" }}
 								>
-									{row.ours && <span className="text-[#111] text-sm font-medium">{row.ours}</span>}
-									{row.oursPills && (
+									{!row.pills && (
+										<span className="text-[#111] text-sm font-medium">{row.ours}</span>
+									)}
+									{row.pills && (
 										<>
 											<ul className="md:hidden space-y-1">
-												{row.oursPills.map((p) => (
+												{pills.map((p) => (
 													<li
 														key={p}
 														className="flex items-start gap-2 text-sm text-[#111] font-medium"
@@ -107,7 +119,7 @@ export default function Pricing() {
 												))}
 											</ul>
 											<div className="hidden md:flex flex-wrap gap-2">
-												{row.oursPills.map((p) => (
+												{pills.map((p) => (
 													<span
 														key={p}
 														className="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
@@ -122,7 +134,63 @@ export default function Pricing() {
 								</div>
 
 								<div className="p-3 md:p-5 border-l border-[#E5E2DC]">
-									<span className="text-[#6B6863] text-sm">{row.theirs}</span>
+									{!row.pills && <span className="text-[#6B6863] text-sm">{row.junior}</span>}
+									{row.pills && (
+										<>
+											<ul className="md:hidden space-y-1">
+												{pills.map((p) => (
+													<li key={p} className="flex items-start gap-2 text-sm text-[#6B6863]">
+														<span
+															className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px]"
+															style={{ background: "#A8A49E" }}
+														/>
+														{p}
+													</li>
+												))}
+											</ul>
+											<div className="hidden md:flex flex-wrap gap-2">
+												{pills.map((p) => (
+													<span
+														key={p}
+														className="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
+														style={{ background: "#F5F3EF", color: "#6B6863" }}
+													>
+														{p}
+													</span>
+												))}
+											</div>
+										</>
+									)}
+								</div>
+
+								<div className="p-3 md:p-5 border-l border-[#E5E2DC]">
+									{!row.pills && <span className="text-[#6B6863] text-sm">{row.theirs}</span>}
+									{row.pills && (
+										<>
+											<ul className="md:hidden space-y-1">
+												{pills.map((p) => (
+													<li key={p} className="flex items-start gap-2 text-sm text-[#6B6863]">
+														<span
+															className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-[5px]"
+															style={{ background: "#A8A49E" }}
+														/>
+														{p}
+													</li>
+												))}
+											</ul>
+											<div className="hidden md:flex flex-wrap gap-2">
+												{pills.map((p) => (
+													<span
+														key={p}
+														className="inline-block px-2.5 py-1 rounded-full text-xs font-medium"
+														style={{ background: "#F5F3EF", color: "#6B6863" }}
+													>
+														{p}
+													</span>
+												))}
+											</div>
+										</>
+									)}
 								</div>
 							</div>
 						))}
@@ -131,17 +199,11 @@ export default function Pricing() {
 
 				<div className="mt-8">
 					<a
-						href="https://github.com/zggf-zggf/openviktor"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="inline-flex items-center gap-2 px-8 py-4 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
+						href="/hire"
+						className="inline-flex items-center px-8 py-4 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
 						style={{ background: "#111", color: "#fff" }}
 					>
-						<svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
-							<title>GitHub</title>
-							<path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-						</svg>
-						Get started free
+						Hire now. Free
 					</a>
 				</div>
 			</div>

@@ -15,7 +15,6 @@ function generateCloudCols(count: number) {
 		for (let j = 0; j < rows; j++) chars.push(OS[(offset + j) % OS.length]);
 		cols.push({ chars, opacity: 0.18 + (i % 5) * 0.12 });
 	}
-	// suppress unused warning from rand
 	void rand;
 	return cols;
 }
@@ -57,8 +56,8 @@ function CloudCols({ cols }: { cols: ReturnType<typeof generateCloudCols> }) {
 const tabs = [
 	{
 		key: "identity",
-		label: "Real Identity",
-		desc: "Has its own email, Slack, and name",
+		label: "Hire in 60 Seconds",
+		desc: "Gets its own identity, joins your tools, and starts working",
 	},
 	{
 		key: "memory",
@@ -75,6 +74,7 @@ const tabs = [
 function IdentityPanel() {
 	return (
 		<div
+			className="hero-panel"
 			style={{
 				border: "1px solid #E5E2DC",
 				borderRadius: 12,
@@ -84,7 +84,6 @@ function IdentityPanel() {
 				fontFamily: "-apple-system,'Helvetica Neue',sans-serif",
 				display: "flex",
 				flexDirection: "column",
-				height: "100%",
 			}}
 		>
 			<div
@@ -137,7 +136,7 @@ function IdentityPanel() {
 						marginRight: 44,
 					}}
 				>
-					Mail · Kuse Inc.
+					Mail · OpenViktor
 				</span>
 			</div>
 
@@ -162,16 +161,15 @@ function IdentityPanel() {
 				</div>
 				<div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
 					<img
-						src="/avatars/rin.jpeg"
-						alt="Rin"
+						src="/openviktor.png"
+						alt="OpenViktor"
 						style={{
 							width: 36,
 							height: 36,
 							borderRadius: "50%",
 							objectFit: "cover",
 							flexShrink: 0,
-							outline: "2px solid #1e6a8a",
-							outlineOffset: 1,
+							background: "#fff",
 						}}
 					/>
 					<div style={{ flex: 1, minWidth: 0 }}>
@@ -183,8 +181,8 @@ function IdentityPanel() {
 								flexWrap: "wrap",
 							}}
 						>
-							<span style={{ fontSize: 13.5, fontWeight: 600, color: "#1D1C1D" }}>Rin</span>
-							<span style={{ fontSize: 12, color: "#A8A49E" }}>&lt;rin@kuse.ai&gt;</span>
+							<span style={{ fontSize: 13.5, fontWeight: 600, color: "#1D1C1D" }}>OpenViktor</span>
+							<span style={{ fontSize: 12, color: "#A8A49E" }}>&lt;openviktor@soofte.com&gt;</span>
 							<span style={{ fontSize: 11, color: "#A8A49E", marginLeft: "auto" }}>
 								Today, 8:47 AM
 							</span>
@@ -247,9 +245,58 @@ function IdentityPanel() {
 						animationDelay: "2.3s",
 					}}
 				>
-					<div style={{ fontWeight: 600, color: "#1D1C1D" }}>Rin</div>
-					<div style={{ color: "#A8A49E" }}>AI Sales Rep · Kuse Inc.</div>
-					<div style={{ color: "#1e6a8a" }}>rin@kuse.ai</div>
+					<div style={{ fontWeight: 600, color: "#1D1C1D" }}>OpenViktor</div>
+					<div style={{ color: "#A8A49E" }}>AI Employee · OpenViktor</div>
+					<div style={{ color: "#1e6a8a" }}>openviktor@soofte.com</div>
+				</div>
+			</div>
+			<div
+				style={{
+					padding: "10px 16px",
+					borderTop: "1px solid #EBEBEB",
+					flexShrink: 0,
+					animation: "msgIn 0.45s ease both",
+					animationDelay: "2.8s",
+				}}
+			>
+				<div
+					style={{
+						border: "1px solid #E5E2DC",
+						borderRadius: 8,
+						padding: "9px 12px",
+						display: "flex",
+						alignItems: "center",
+						gap: 8,
+						background: "#FAFAF8",
+					}}
+				>
+					<span style={{ fontSize: 12.5, color: "#C8C4BD", flex: 1 }}>Reply to David…</span>
+					<div style={{ display: "flex", gap: 6 }}>
+						<span
+							style={{
+								fontSize: 11,
+								color: "#6B6863",
+								background: "#F0EDE8",
+								borderRadius: 6,
+								padding: "3px 9px",
+								cursor: "pointer",
+							}}
+						>
+							Forward
+						</span>
+						<span
+							style={{
+								fontSize: 11,
+								color: "#fff",
+								background: "#1e6a8a",
+								borderRadius: 6,
+								padding: "3px 9px",
+								cursor: "pointer",
+							}}
+						>
+							Reply
+						</span>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -278,9 +325,20 @@ function MemoryPanel() {
 			time: "Nov 3",
 			snippet: "Confirmed rollout to all new accounts",
 		},
+		{
+			source: "Slack #growth",
+			time: "2 months ago",
+			snippet: "Enterprise tier added following board feedback",
+		},
+		{
+			source: "Notion",
+			time: "Dec 1",
+			snippet: "2026 pricing roadmap — stakeholder draft v2",
+		},
 	];
 	return (
 		<div
+			className="hero-panel"
 			style={{
 				background: "#fff",
 				border: "1px solid #E5E2DC",
@@ -289,7 +347,6 @@ function MemoryPanel() {
 				boxShadow: "0 8px 40px rgba(0,0,0,0.10)",
 				display: "flex",
 				flexDirection: "column",
-				height: "100%",
 			}}
 		>
 			<div
@@ -351,9 +408,9 @@ function MemoryPanel() {
 			<div style={{ flex: 1, overflowY: "auto" }}>
 				{results.map((r, i) => (
 					<div
-						key={r.source}
+						key={`${r.source}-${r.time}`}
 						style={{
-							padding: "10px 14px",
+							padding: "13px 14px",
 							borderBottom: "1px solid #F5F3EF",
 							animation: "memRowAppear 7s ease infinite",
 							animationDelay: `${i * 0.35}s`,
@@ -409,101 +466,38 @@ function MemoryPanel() {
 	);
 }
 
-function TaskRow({
-	t,
-	i,
-}: {
-	t: { label: string; status: string; done: boolean; active: boolean; queued: boolean };
-	i: number;
-}) {
-	return (
-		<div
-			style={{
-				display: "flex",
-				alignItems: "center",
-				gap: 10,
-				padding: "9px 14px",
-				borderBottom: "1px solid #F5F3EF",
-				animation: "msgIn 0.4s ease both",
-				animationDelay: `${0.3 + i * 0.15}s`,
-			}}
-		>
-			<span
-				style={{
-					width: 14,
-					height: 14,
-					borderRadius: "50%",
-					flexShrink: 0,
-					background: t.done ? "#1e6a8a" : t.active ? "#e8f5f8" : "transparent",
-					border: t.done ? "none" : t.active ? "2px solid #1e6a8a" : "1.5px solid #E5E2DC",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-				}}
-			>
-				{t.done && (
-					<svg width={8} height={8} viewBox="0 0 8 8" fill="none">
-						<title>Done</title>
-						<path
-							d="M1.5 4l2 2 3-3"
-							stroke="#fff"
-							strokeWidth="1.4"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						/>
-					</svg>
-				)}
-			</span>
-			<span
-				style={{
-					flex: 1,
-					fontSize: 12.5,
-					color: t.done ? "#A8A49E" : "#111",
-					textDecoration: t.done ? "line-through" : "none",
-				}}
-			>
-				{t.label}
-			</span>
-			<span
-				style={{
-					fontSize: 10,
-					color: t.done ? "#A8A49E" : t.active ? "#1e6a8a" : "#C8C4BD",
-					fontWeight: t.active ? 600 : 400,
-				}}
-			>
-				{t.status}
-			</span>
-		</div>
-	);
-}
-
 function SelfDrivenPanel() {
 	const tasks = [
-		{ label: "Draft Q2 board update", status: "Done", done: true, active: false, queued: false },
+		{ label: "Draft Q2 board update", status: "Done", done: true, active: false },
+		{ label: "Summarize last week's standups", status: "Done", done: true, active: false },
 		{
 			label: "Follow up with Acme contract",
 			status: "In progress",
 			done: false,
 			active: true,
-			queued: false,
-		},
-		{
-			label: "Summarize last 3 standup notes",
-			status: "Queued",
-			done: false,
-			active: false,
-			queued: true,
 		},
 		{
 			label: "Flag overdue invoices from HubSpot",
 			status: "Queued",
 			done: false,
 			active: false,
-			queued: true,
+		},
+		{
+			label: "Prepare competitor analysis",
+			status: "Queued",
+			done: false,
+			active: false,
+		},
+		{
+			label: "Draft onboarding doc for new hire",
+			status: "Queued",
+			done: false,
+			active: false,
 		},
 	];
 	return (
 		<div
+			className="hero-panel"
 			style={{
 				background: "#fff",
 				border: "1px solid #E5E2DC",
@@ -512,7 +506,6 @@ function SelfDrivenPanel() {
 				boxShadow: "0 8px 40px rgba(0,0,0,0.10)",
 				display: "flex",
 				flexDirection: "column",
-				height: "100%",
 			}}
 		>
 			<div
@@ -550,7 +543,7 @@ function SelfDrivenPanel() {
 						marginRight: 44,
 					}}
 				>
-					Rin&apos;s Task Queue
+					OpenViktor Task Queue
 				</span>
 			</div>
 			<div
@@ -564,20 +557,19 @@ function SelfDrivenPanel() {
 				}}
 			>
 				<img
-					src="/avatars/rin.jpeg"
-					alt="Rin"
+					src="/openviktor.png"
+					alt="OpenViktor"
 					style={{
 						width: 32,
 						height: 32,
 						borderRadius: "50%",
 						objectFit: "cover",
-						outline: "2px solid #1e6a8a",
-						outlineOffset: 1,
+						background: "#fff",
 					}}
 				/>
 				<div>
 					<div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-						<span style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>Rin</span>
+						<span style={{ fontSize: 13, fontWeight: 600, color: "#111" }}>OpenViktor</span>
 						<span
 							style={{
 								fontSize: 9,
@@ -616,7 +608,64 @@ function SelfDrivenPanel() {
 			</div>
 			<div style={{ flex: 1 }}>
 				{tasks.map((t, i) => (
-					<TaskRow key={t.label} t={t} i={i} />
+					<div
+						key={t.label}
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 10,
+							padding: "12px 14px",
+							borderBottom: "1px solid #F5F3EF",
+							animation: "msgIn 0.4s ease both",
+							animationDelay: `${0.3 + i * 0.15}s`,
+						}}
+					>
+						<span
+							style={{
+								width: 14,
+								height: 14,
+								borderRadius: "50%",
+								flexShrink: 0,
+								background: t.done ? "#1e6a8a" : t.active ? "#e8f5f8" : "transparent",
+								border: t.done ? "none" : t.active ? "2px solid #1e6a8a" : "1.5px solid #E5E2DC",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+							}}
+						>
+							{t.done && (
+								<svg width={8} height={8} viewBox="0 0 8 8" fill="none">
+									<title>Done</title>
+									<path
+										d="M1.5 4l2 2 3-3"
+										stroke="#fff"
+										strokeWidth="1.4"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									/>
+								</svg>
+							)}
+						</span>
+						<span
+							style={{
+								flex: 1,
+								fontSize: 12.5,
+								color: t.done ? "#A8A49E" : "#111",
+								textDecoration: t.done ? "line-through" : "none",
+							}}
+						>
+							{t.label}
+						</span>
+						<span
+							style={{
+								fontSize: 10,
+								color: t.done ? "#A8A49E" : t.active ? "#1e6a8a" : "#C8C4BD",
+								fontWeight: t.active ? 600 : 400,
+							}}
+						>
+							{t.status}
+						</span>
+					</div>
 				))}
 			</div>
 			<div
@@ -669,6 +718,7 @@ export default function Hero() {
             transform-origin: top center;
           }
         }
+        .hero-panel { height: 100%; }
       `}</style>
 
 			<div
@@ -736,10 +786,10 @@ export default function Hero() {
 			</div>
 
 			<div className="max-w-7xl mx-auto" style={{ position: "relative", zIndex: 1 }}>
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 xl:gap-20 items-start">
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 xl:gap-20 items-stretch">
 					<div>
 						<a
-							href="https://github.com/zggf-zggf/openviktor"
+							href="https://github.com/zggf-zggf/openviktor/"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium mb-6 hover:border-[#1e6a8a] hover:text-[#1e6a8a] transition-colors"
@@ -770,7 +820,7 @@ export default function Hero() {
 						</h1>
 
 						<a
-							href="/slack/oauth/install"
+							href="/hire"
 							className="inline-flex items-center px-8 py-3.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity mb-3 md:mb-9"
 							style={{ background: "#111", color: "#fff" }}
 						>
@@ -813,7 +863,7 @@ export default function Hero() {
 						</div>
 					</div>
 
-					<div className="w-full relative h-[360px] md:h-[500px]">
+					<div className="w-full relative h-[360px] md:h-full">
 						<div
 							style={{
 								position: "absolute",
@@ -829,7 +879,10 @@ export default function Hero() {
 								zIndex: 0,
 							}}
 						/>
-						<div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+						<div
+							className="absolute inset-0 md:relative md:inset-auto overflow-hidden md:overflow-visible md:h-full"
+							style={{ zIndex: 1 }}
+						>
 							<div className="hero-panel-inner w-full h-full">
 								{activeTab === 0 && <IdentityPanel />}
 								{activeTab === 1 && <MemoryPanel />}

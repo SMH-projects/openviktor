@@ -1,9 +1,9 @@
 const steps = [
 	{
 		num: "01",
-		title: "Connect your tools",
-		desc: "Link Slack, email, Notion, GitHub, and your other tools. Viktor gets access to your stack. Not a demo environment.",
-		footer: "Setup in under 10 minutes",
+		title: "Plug in your stack",
+		desc: "Connect Slack, email, Notion, GitHub — whatever you run on. Real access, not a sandbox.",
+		footer: "Done in under 2 minutes",
 		visual: (
 			<div
 				style={{
@@ -99,9 +99,9 @@ const steps = [
 	},
 	{
 		num: "02",
-		title: "Viktor learns your org",
-		desc: "They read your docs, Slack history, meeting notes, and code. By the end of day one they know your team, your processes, and your priorities.",
-		footer: "Deep org context from day one",
+		title: "It reads everything",
+		desc: "Docs, Slack history, meeting notes, code — all of it. Day one, it already knows your team, your context, your priorities.",
+		footer: "Full org context, day one",
 		visual: (
 			<div
 				style={{
@@ -122,7 +122,7 @@ const steps = [
 						textTransform: "uppercase",
 					}}
 				>
-					Reading kuse.ai
+					Reading your workspace
 				</div>
 				<div style={{ marginBottom: 10 }}>
 					<div
@@ -179,9 +179,9 @@ const steps = [
 	},
 	{
 		num: "03",
-		title: "Viktor starts working",
-		desc: "Assign a task or let them find one. They execute, report back, and ask only when genuinely blocked. Then they do it again, every day.",
-		footer: "24/7 autonomous output",
+		title: "It gets to work",
+		desc: "Assign something or let it find work itself. Executes, reports back, asks only when stuck. Repeat, every day.",
+		footer: "Runs 24/7",
 		visual: (
 			<div
 				style={{
@@ -197,20 +197,18 @@ const steps = [
 				}}
 			>
 				<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-					<div
+					<img
+						src="/openviktor.png"
+						alt="OpenViktor"
 						style={{
-							width: 28,
-							height: 28,
+							width: 22,
+							height: 22,
 							borderRadius: "50%",
-							background: "linear-gradient(135deg,#a78bfa,#ec4899)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
+							objectFit: "cover",
 							flexShrink: 0,
+							background: "#fff",
 						}}
-					>
-						<span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>R</span>
-					</div>
+					/>
 					<div>
 						<div style={{ display: "flex", alignItems: "center", gap: 5 }}>
 							<span
@@ -220,7 +218,7 @@ const steps = [
 									fontSize: 12,
 								}}
 							>
-								Rin
+								OpenViktor
 							</span>
 							<span
 								style={{
@@ -302,7 +300,7 @@ export default function HowItWorks() {
 						fontSize: "clamp(32px,4vw,52px)",
 					}}
 				>
-					Three steps to a working employee.
+					Up and running in three steps.
 				</h2>
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">

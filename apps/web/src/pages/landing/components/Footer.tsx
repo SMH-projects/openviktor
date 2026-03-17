@@ -27,7 +27,7 @@ export default function Footer() {
 						</p>
 						<div className="flex items-center gap-4 mt-6">
 							<a
-								href="https://github.com/zggf-zggf/openviktor"
+								href="https://github.com/zggf-zggf/openviktor/"
 								target="_blank"
 								rel="noopener noreferrer"
 								aria-label="GitHub"
@@ -124,23 +124,15 @@ export default function Footer() {
 						</div>
 						<a
 							href="mailto:mtk@soofte.com"
-							className="text-[#6B6863] text-sm hover:text-[#111] transition-colors block mb-2"
+							className="text-[#6B6863] text-sm hover:text-[#111] transition-colors block"
 						>
 							Email us →
-						</a>
-						<a
-							href="https://partners.dub.co/junior-so"
-							target="_blank"
-							rel="noopener noreferrer"
-							className="text-[#6B6863] text-sm hover:text-[#111] transition-colors mt-2 block"
-						>
-							Partner Program
 						</a>
 					</div>
 				</div>
 
 				<div className="border-t border-[#E5E2DC] pt-6 text-[#C8C4BD] text-xs">
-					© 2026 OpenHuma. All rights reserved.
+					© 2026 HUMALIKE. All rights reserved.
 				</div>
 			</div>
 		</footer>

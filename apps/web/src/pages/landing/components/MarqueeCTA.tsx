@@ -1,34 +1,34 @@
 const row1 = [
-	"Own email, Slack, and name",
-	"Ready on day one",
-	"Works in your existing tools",
-	"One hire, any role",
-	"Never forgets a decision",
-	"Onboards in minutes, not months",
-	"Active before your team wakes up",
-	"24/7 across every time zone",
+	"Its own email and Slack handle",
+	"Live on day one",
+	"Runs inside your existing stack",
+	"One hire, every role",
+	"Never drops context",
+	"2-minute setup, no IT ticket",
+	"Working before your team logs in",
+	"24/7, no time zones, no holidays",
 ];
 
 const row2 = [
-	"Sends emails from its own inbox",
-	"Remembers every meeting and doc",
-	"Flags issues before they escalate",
-	"Joins your team directory",
-	"Files tickets without being asked",
-	"Pulls reports automatically",
-	"Follows up so you don't have to",
-	"Answers Slack in seconds",
+	"Sends real emails from its own inbox",
+	"Knows every meeting and doc",
+	"Catches problems before you do",
+	"Listed in your team directory",
+	"Opens tickets on its own",
+	"Pulls data, builds reports",
+	"Handles follow-ups without reminders",
+	"Replies in Slack instantly",
 ];
 
 const row3 = [
-	"Scale without growing headcount",
-	"Institutional memory that sticks",
-	"Replace repetitive work entirely",
-	"Ship with a smaller team",
-	"Run ops on autopilot",
-	"Free your team for high-impact work",
-	"No context lost between conversations",
-	"Compound productivity every week",
+	"Grow output without adding headcount",
+	"Zero knowledge lost at handoff",
+	"Kills repetitive work permanently",
+	"Ship more with fewer people",
+	"Ops that run themselves",
+	"Your team does only the work that matters",
+	"Full context, always",
+	"Gets faster the longer it runs",
 ];
 
 function MarqueeRow({
@@ -88,7 +88,7 @@ export default function MarqueeCTA() {
 				</h3>
 				<div className="flex flex-col sm:flex-row items-center justify-center gap-4">
 					<a
-						href="/slack/oauth/install"
+						href="/hire"
 						className="inline-flex items-center px-8 py-4 rounded-full text-sm font-medium shrink-0 hover:opacity-80 transition-opacity"
 						style={{ background: "#fff", color: "#111" }}
 					>

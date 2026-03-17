@@ -11,7 +11,7 @@ export default function LogosBar() {
 		<section className="py-12 px-6 border-t border-[#E5E2DC]">
 			<div className="max-w-7xl mx-auto">
 				<p className="text-center text-[#C8C4BD] text-xs tracking-widest uppercase mb-8">
-					Built by a Humalike team
+					Built by HUMALIKE.AI team
 				</p>
 				<div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
 					{credentials.map((item, i) => (

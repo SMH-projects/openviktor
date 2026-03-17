@@ -1,10 +1,10 @@
 function KnowledgeBaseVisual() {
 	const items = [
-		{ name: "Notion", count: "324 pages", dot: "#e11d48" },
-		{ name: "Slack", count: "6 months", dot: "#4A154B" },
-		{ name: "Google Drive", count: "89 files", dot: "#1a73e8" },
-		{ name: "GitHub", count: "12 repos", dot: "#111" },
-		{ name: "HubSpot", count: "1,847 contacts", dot: "#ff7a59" },
+		{ name: "Linear", count: "312 tickets", dot: "#5e6ad2" },
+		{ name: "Slack", count: "4 months", dot: "#4A154B" },
+		{ name: "Notion", count: "61 pages", dot: "#e11d48" },
+		{ name: "GitHub", count: "5 repos", dot: "#111" },
+		{ name: "Stripe", count: "1,204 events", dot: "#635bff" },
 	];
 	return (
 		<div
@@ -41,7 +41,7 @@ function KnowledgeBaseVisual() {
 						textTransform: "uppercase",
 					}}
 				>
-					Knowledge Base
+					Workspace ingested
 				</div>
 			</div>
 			{items.map((item) => (
@@ -88,9 +88,7 @@ function KnowledgeBaseVisual() {
 						display: "inline-block",
 					}}
 				/>
-				<span style={{ fontSize: 11, color: "#1e6a8a", fontWeight: 600 }}>
-					Ready to work on day one.
-				</span>
+				<span style={{ fontSize: 11, color: "#1e6a8a", fontWeight: 600 }}>Online. Ready.</span>
 			</div>
 		</div>
 	);
@@ -134,7 +132,7 @@ function SlackVisual() {
 						fontWeight: 600,
 					}}
 				>
-					#general
+					#engineering
 				</span>
 			</div>
 			<div
@@ -159,12 +157,12 @@ function SlackVisual() {
 								flexShrink: 0,
 							}}
 						>
-							<span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>M</span>
+							<span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>A</span>
 						</div>
 						<div>
 							<div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-								<span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Maya</span>
-								<span style={{ fontSize: 11, color: "#A8A49E" }}>9:03 AM</span>
+								<span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Alex</span>
+								<span style={{ fontSize: 11, color: "#A8A49E" }}>8:51 AM</span>
 							</div>
 							<p
 								style={{
@@ -174,7 +172,7 @@ function SlackVisual() {
 									lineHeight: 1.5,
 								}}
 							>
-								Can someone put together a deck on our Q3 performance for the board?
+								Anyone know why the Stripe webhooks failed last night?
 							</p>
 						</div>
 					</div>
@@ -186,25 +184,21 @@ function SlackVisual() {
 					}}
 				>
 					<div style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
-						<div
+						<img
+							src="/openviktor.png"
+							alt="OpenViktor"
 							style={{
 								width: 28,
 								height: 28,
 								borderRadius: 6,
-								background: "linear-gradient(135deg,#a78bfa,#ec4899)",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
+								objectFit: "cover",
 								flexShrink: 0,
-								outline: "2px solid #1e6a8a",
-								outlineOffset: 1,
+								background: "#fff",
 							}}
-						>
-							<span style={{ color: "#fff", fontSize: 11, fontWeight: 700 }}>R</span>
-						</div>
+						/>
 						<div>
 							<div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-								<span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>Rin</span>
+								<span style={{ fontSize: 13, fontWeight: 700, color: "#111" }}>OpenViktor</span>
 								<span
 									style={{
 										fontSize: 9,
@@ -217,7 +211,7 @@ function SlackVisual() {
 								>
 									AI
 								</span>
-								<span style={{ fontSize: 11, color: "#A8A49E" }}>9:03 AM</span>
+								<span style={{ fontSize: 11, color: "#A8A49E" }}>8:51 AM</span>
 							</div>
 							<p
 								style={{
@@ -227,8 +221,8 @@ function SlackVisual() {
 									lineHeight: 1.5,
 								}}
 							>
-								On it — I&apos;ll have a draft ready in 10 minutes. I&apos;ll pull the numbers from
-								HubSpot and the Oct board summary from Notion.
+								3 failures, same customer ID. Timeout on retry #2. Filed a bug in Linear and flagged
+								the billing team.
 							</p>
 						</div>
 					</div>
@@ -241,24 +235,24 @@ function SlackVisual() {
 function OrgMemoryVisual() {
 	const results = [
 		{
-			source: "Slack #pricing",
-			time: "3 months ago",
-			snippet: "Decided to move to seat-based at $2k/mo",
+			source: "Slack #product",
+			time: "2 months ago",
+			snippet: "Agreed to push launch to April 7th",
 		},
 		{
-			source: "Meeting",
-			time: "Oct 12",
-			snippet: "Maya's analysis showed 3x better retention",
+			source: "Meeting notes",
+			time: "Jan 18",
+			snippet: "Stakeholder sign-off needed before dev freeze",
 		},
 		{
 			source: "Notion",
-			time: "Sep 5",
-			snippet: "Q3 pricing review doc",
+			time: "Feb 2",
+			snippet: "Go-to-market doc — draft v3",
 		},
 		{
 			source: "Email",
-			time: "Nov 3",
-			snippet: "Confirmed rollout to all new accounts",
+			time: "Mar 2",
+			snippet: "Legal cleared the T&Cs, ready to ship",
 		},
 	];
 	return (
@@ -296,7 +290,7 @@ function OrgMemoryVisual() {
 						fontWeight: 600,
 					}}
 				>
-					pricing strategy
+					launch timeline
 				</span>
 			</div>
 			{results.map((r, i) => (
@@ -335,190 +329,27 @@ function OrgMemoryVisual() {
 	);
 }
 
-function MeetingVisual() {
-	return (
-		<div
-			style={{
-				background: "#fff",
-				border: "1px solid #E5E2DC",
-				borderRadius: 14,
-				overflow: "hidden",
-				boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-				width: "100%",
-				maxWidth: 380,
-			}}
-		>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "1fr 1fr",
-					gap: 2,
-					padding: 2,
-					background: "#111",
-				}}
-			>
-				{[
-					{
-						name: "Rin",
-						initials: "R",
-						grad: "linear-gradient(135deg,#a78bfa,#ec4899)",
-						isAI: true,
-					},
-					{
-						name: "Maya",
-						initials: "M",
-						grad: "linear-gradient(135deg,#818cf8,#6366f1)",
-						isAI: false,
-					},
-					{
-						name: "Liam",
-						initials: "L",
-						grad: "linear-gradient(135deg,#fb923c,#f59e0b)",
-						isAI: false,
-					},
-					{
-						name: "Alex",
-						initials: "A",
-						grad: "linear-gradient(135deg,#34d399,#059669)",
-						isAI: false,
-					},
-				].map((p) => (
-					<div
-						key={p.name}
-						style={{
-							aspectRatio: "4/3",
-							background: "#1a1a2e",
-							borderRadius: 4,
-							display: "flex",
-							flexDirection: "column",
-							alignItems: "center",
-							justifyContent: "center",
-							position: "relative",
-						}}
-					>
-						<div
-							style={{
-								width: 36,
-								height: 36,
-								borderRadius: "50%",
-								background: p.grad,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-							}}
-						>
-							<span style={{ color: "#fff", fontWeight: 700, fontSize: 14 }}>{p.initials}</span>
-						</div>
-						<span
-							style={{
-								color: "rgba(255,255,255,0.6)",
-								fontSize: 10,
-								marginTop: 4,
-							}}
-						>
-							{p.name}
-						</span>
-						{p.isAI && (
-							<span
-								style={{
-									position: "absolute",
-									top: 5,
-									left: 5,
-									fontSize: 8,
-									background: "#1e6a8a",
-									color: "#fff",
-									padding: "1px 4px",
-									borderRadius: 3,
-									fontWeight: 700,
-								}}
-							>
-								AI
-							</span>
-						)}
-					</div>
-				))}
-			</div>
-			<div style={{ padding: "8px 10px", borderTop: "2px solid #1e6a8a" }}>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 5,
-						marginBottom: 6,
-					}}
-				>
-					<span
-						style={{
-							width: 6,
-							height: 6,
-							borderRadius: "50%",
-							background: "#ef4444",
-							display: "inline-block",
-							animation: "blink-rec 1s ease-in-out infinite",
-						}}
-					/>
-					<span
-						style={{
-							fontSize: 10,
-							fontWeight: 700,
-							color: "#111",
-							letterSpacing: "0.05em",
-						}}
-					>
-						Rin&apos;s Notes · Live
-					</span>
-				</div>
-				{["Q4 target: $2M ARR", "Launch: March 15", "Action: Maya sends proposal to Acme"].map(
-					(note, i) => (
-						<div
-							key={note}
-							style={{
-								display: "flex",
-								gap: 5,
-								alignItems: "flex-start",
-								marginBottom: 3,
-								animation: "msgAppear 8s ease infinite",
-								animationDelay: `${i * 0.6}s`,
-							}}
-						>
-							<span style={{ color: "#1e6a8a", fontSize: 11, marginTop: 1 }}>•</span>
-							<span style={{ fontSize: 11, color: "#1D1C1D", lineHeight: 1.4 }}>{note}</span>
-						</div>
-					),
-				)}
-			</div>
-		</div>
-	);
-}
-
 const bentoItems = [
 	{
-		title: "Ready on day one.",
-		desc: 'Viktor reads your documentation, Slack history, code, and meeting notes before they start. No two-week ramp. No "can you explain the context?"',
-		bg: "/bg-feature-1.jpg",
+		title: "No onboarding needed.",
+		desc: "Reads your docs, Slack history, code, and notes before its first day. Shows up knowing the context. No hand-holding.",
+		bg: "/222.png",
 		reversed: false,
 		Visual: KnowledgeBaseVisual,
 	},
 	{
-		title: "Acts before being asked.",
-		desc: "Viktor doesn't wait for a prompt. They monitor what's happening, identify what matters, and surface it. A draft is already attached.",
-		bg: "/bg-feature-2.jpg",
+		title: "Moves without being asked.",
+		desc: "Doesn't wait for a prompt. Monitors what's happening, spots what needs doing, and ships it. Draft already attached.",
+		bg: "/333.png",
 		reversed: true,
 		Visual: SlackVisual,
 	},
 	{
-		title: "Understands your organization.",
-		desc: "Viktor remembers context from three months ago, decisions made in side channels, commitments others forgot. The kind of institutional memory that usually gets lost between handoffs, threads, and time zones.",
-		bg: "/bg-feature-3.jpg",
+		title: "Remembers everything.",
+		desc: "That pricing call three months ago. The side-channel decision nobody wrote down. The commitment buried in a thread. It keeps it all — and uses it.",
+		bg: "/444.png",
 		reversed: false,
 		Visual: OrgMemoryVisual,
-	},
-	{
-		title: "Joins your meetings.",
-		desc: "Viktor attends calls, takes real-time notes, captures action items, and sends follow-ups. Without being asked. Without missing anything.",
-		bg: "/bg-feature-4.jpg",
-		reversed: true,
-		Visual: MeetingVisual,
 	},
 ];
 
@@ -526,7 +357,7 @@ export default function WhatViktorDoes() {
 	return (
 		<section className="py-12 md:py-24 px-6 border-t border-[#E5E2DC]">
 			<div className="max-w-7xl mx-auto">
-				<p className="text-[#A8A49E] text-xs tracking-widest uppercase mb-4">What Viktor does</p>
+				<p className="text-[#A8A49E] text-xs tracking-widest uppercase mb-4">What it does</p>
 				<h2
 					className="leading-[1.1] tracking-tight text-[#111] mb-8 md:mb-16 max-w-[1000px]"
 					style={{
@@ -535,7 +366,7 @@ export default function WhatViktorDoes() {
 						fontSize: "clamp(32px,4vw,52px)",
 					}}
 				>
-					Everything a great hire does.
+					Does the work.
 					<br />
 					Every day.
 				</h2>
