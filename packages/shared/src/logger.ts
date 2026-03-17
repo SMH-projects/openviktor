@@ -18,7 +18,7 @@ function flushToBetterStack() {
 }
 
 function sendLog(level: string, name: string, obj: Record<string, unknown>, msg: string) {
-	buffer.push(JSON.stringify({ ...obj, msg, level, name, dt: new Date().toISOString() }));
+	buffer.push(JSON.stringify({ ...obj, message: msg, level, name, dt: new Date().toISOString() }));
 	if (!timer) timer = setTimeout(flushToBetterStack, 1000);
 	if (buffer.length >= 50) flushToBetterStack();
 }
