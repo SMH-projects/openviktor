@@ -1,0 +1,64 @@
+# OpenViktor
+
+> Open-source AI employee for Slack. Hire an AI teammate that gets its own identity, learns from every conversation, understands your organization, and takes initiative.
+
+## What is OpenViktor?
+
+OpenViktor is an open-source AI employee platform. It creates AI teammates that live inside your Slack workspace with their own identity — their own email, Slack handle, and presence in the team directory. Unlike chatbots, OpenViktor employees learn from every interaction, understand organizational context, and proactively take action.
+
+## Key Capabilities
+
+- Runs inside Slack with its own handle and identity
+- Learns from every teammate and conversation
+- Sends real emails from its own inbox
+- Opens tickets, pulls data, builds reports
+- Catches problems before you do
+- Handles follow-ups without reminders
+- 24/7 availability, no time zones, no holidays
+- 2-minute setup, no IT ticket required
+- Works with your existing stack (GitHub, Linear, Google Workspace, etc.)
+
+## How It Works
+
+1. **Open a position** — Define the role you want to hire for
+2. **AI employee joins Slack** — Gets its own identity and access
+3. **Learns your organization** — Understands context from conversations and docs
+4. **Takes initiative** — Proactively handles tasks, follow-ups, and reporting
+
+## Use Cases
+
+- Operations automation
+- Customer support triage
+- Internal knowledge management
+- Meeting follow-ups and action items
+- Report generation
+- Ticket management
+- Cross-team coordination
+
+## Technical Details
+
+- Open-source: https://github.com/zggf-zggf/openviktor/
+- Stack: TypeScript, Bun, PostgreSQL, Redis, Prisma ORM
+- Slack integration via Socket Mode (no public URL needed)
+- Self-hostable with Docker
+- Provider-agnostic LLM support
+
+## Pricing
+
+- **Free tier** available (open-source, self-host)
+- **Managed hosting** available at openviktor.com
+
+## Links
+
+- Website: https://openviktor.com
+- GitHub: https://github.com/zggf-zggf/openviktor/
+- Discord: https://discord.gg/7bZFjm9aHH
+- X/Twitter: https://x.com/humalikeai
+- Contact: mtk@soofte.com
+- Parent company: https://www.humalike.ai/
+
+## Legal
+
+- Terms of Service: https://openviktor.com/terms-of-service
+- Privacy Policy: https://openviktor.com/privacy
+- Compliance: https://openviktor.com/compliance (ISO 27001, SOC 2 Type 2)

@@ -1,0 +1,11 @@
+# OpenViktor — Open-Source AI Employee for Slack
+# https://openviktor.com
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://openviktor.com/sitemap.xml
+
+# AI/LLM agent context
+# See /llms.txt for a plain-text site summary optimized for language models

@@ -1,0 +1,90 @@
+# OpenViktor — Complete Reference
+
+> Open-source AI employee for Slack. Hire an AI teammate that gets its own identity, learns from every conversation, understands your organization, and takes initiative.
+
+For a concise overview, see /llms.txt
+
+---
+
+## Product Overview
+
+OpenViktor is an open-source platform that creates AI employees — not chatbots, not copilots, but full AI teammates. Each AI employee gets its own Slack handle, email address, and listing in your team directory. They learn continuously from every conversation and document they encounter, build understanding of your organization's processes and people, and proactively take action without being prompted.
+
+The platform is built for teams that want to scale output without scaling headcount. Instead of building automations or writing scripts, you "hire" an AI employee for a role, and it handles the work end-to-end.
+
+## Architecture
+
+OpenViktor is a TypeScript monorepo built with Bun workspaces and Turborepo:
+
+- **Bot + Agent Runtime** (`apps/bot/`): The core Slack bot and AI agent runtime. Connects via Socket Mode, processes messages, orchestrates LLM calls, and executes tools.
+- **Admin Dashboard** (`apps/web/`): React + Vite admin interface for managing AI employees, viewing runs, configuring tools and integrations.
+- **Database** (`packages/db/`): PostgreSQL 16 with Prisma ORM. Stores workspaces, threads, agent runs, tool executions, and knowledge.
+- **Shared** (`packages/shared/`): Types, config (zod-validated), structured logging (pino), error types.
+- **Tools** (`packages/tools/`): Tool registry and executors — the capabilities available to AI employees.
+- **Integrations** (`packages/integrations/`): External service clients for GitHub, Linear, Google Workspace, and more.
+
+## Detailed Capabilities
+
+### Communication
+- Lives in Slack with its own handle and profile
+- Sends and receives real emails from its own inbox
+- Replies instantly to messages and threads
+- Handles multi-turn conversations with full context
+
+### Knowledge & Learning
+- Learns from every Slack conversation it observes
+- Indexes documents and wikis
+- Builds organizational knowledge graph
+- Never drops context across conversations
+- Gets faster and more accurate the longer it runs
+
+### Task Execution
+- Opens and manages tickets (Linear, Jira, etc.)
+- Pulls data and builds reports
+- Handles follow-ups without reminders
+- Catches problems proactively
+- Runs inside your existing tool stack
+
+### Integrations
+- Slack (primary interface, Socket Mode)
+- GitHub (code, PRs, issues)
+- Linear (project management)
+- Google Workspace (calendar, docs, email)
+- Extensible tool system for custom integrations
+
+## Self-Hosting
+
+OpenViktor is fully self-hostable:
+- Docker Compose setup for PostgreSQL + Redis
+- Environment configuration via .env files
+- Prisma migrations for database management
+- No public URL required (Slack Socket Mode)
+
+## How It Works (Technical)
+
+1. **Setup**: Install via Slack OAuth, configure workspace settings
+2. **Connection**: Bot connects via Slack Socket Mode — no webhooks or public URLs needed
+3. **Processing**: Messages are processed by the agent runtime, which orchestrates LLM calls through a provider abstraction layer
+4. **Tool Execution**: The agent can invoke tools (GitHub, Linear, email, etc.) with configurable timeouts (600s for tools, 120s for bash)
+5. **Knowledge**: All interactions are stored and indexed, building organizational understanding over time
+6. **Proactive**: Heartbeat system checks in 4x/day, taking initiative on pending tasks
+
+## Pricing Tiers
+
+- **Free / Self-hosted**: Full open-source platform, deploy on your infrastructure
+- **Managed**: Hosted version at openviktor.com with managed infrastructure
+
+## Company
+
+OpenViktor is an open-source project by HUMALIKE (https://www.humalike.ai/), building AI employees for any role.
+
+## Links & Resources
+
+- Website: https://openviktor.com
+- GitHub Repository: https://github.com/zggf-zggf/openviktor/
+- Discord Community: https://discord.gg/7bZFjm9aHH
+- X/Twitter: https://x.com/humalikeai
+- Contact Email: mtk@soofte.com
+- Terms of Service: https://openviktor.com/terms-of-service
+- Privacy Policy: https://openviktor.com/privacy
+- Compliance (ISO 27001, SOC 2 Type 2): https://openviktor.com/compliance
