@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import type { LLMToolDefinition, ToolResult } from "@openviktor/shared";
 import type { ToolExecutor } from "../registry.js";
+import { buildSandboxEnv } from "../sandbox-env.js";
 
 const MAX_OUTPUT_BYTES = 32_768;
 
@@ -36,13 +37,8 @@ export const bashExecutor: ToolExecutor = async (args, ctx) => {
 			cwd: ctx.workspaceDir,
 			timeout: timeoutMs,
 			env: {
-				...process.env,
-				HOME: ctx.workspaceDir,
+				...buildSandboxEnv(ctx.workspaceDir),
 				PYTHONPATH: ctx.workspaceDir,
-				TOOL_GATEWAY_URL:
-					process.env.TOOL_GATEWAY_URL ??
-					`http://localhost:${process.env.TOOL_GATEWAY_PORT ?? "3001"}`,
-				TOOL_TOKEN: process.env.TOOL_TOKEN ?? "local",
 			},
 			stdio: ["ignore", "pipe", "pipe"],
 		});

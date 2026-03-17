@@ -54,6 +54,30 @@ describe("bash", () => {
 		);
 		expect(result.error).toContain("timed out");
 	});
+
+	it("does not leak host secrets into child process environment", async () => {
+		const originalEnv = process.env.SUPER_SECRET_KEY;
+		process.env.SUPER_SECRET_KEY = "sk-leaked-secret-12345";
+		try {
+			const result = await bashExecutor({ command: "env" }, ctx);
+			const output = result.output as { stdout: string };
+			expect(output.stdout).not.toContain("sk-leaked-secret-12345");
+			expect(output.stdout).not.toContain("SUPER_SECRET_KEY");
+		} finally {
+			if (originalEnv === undefined) {
+				delete process.env.SUPER_SECRET_KEY;
+			} else {
+				process.env.SUPER_SECRET_KEY = originalEnv;
+			}
+		}
+	});
+
+	it("provides PATH and TOOL_GATEWAY_URL to child process", async () => {
+		const result = await bashExecutor({ command: "env" }, ctx);
+		const output = result.output as { stdout: string };
+		expect(output.stdout).toContain("PATH=");
+		expect(output.stdout).toContain("TOOL_GATEWAY_URL=");
+	});
 });
 
 describe("file_read", () => {
