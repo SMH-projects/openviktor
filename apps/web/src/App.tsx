@@ -29,7 +29,13 @@ export function App() {
 			<Route index element={<LandingPage />} />
 			<Route path="/welcome" element={<LandingPage />} />
 			<Route path="/compliance" element={<CompliancePage />} />
-			<Route path="/login" Component={() => { window.location.href = "/slack/oauth/install"; return null; }} />
+			<Route
+				path="/login"
+				Component={() => {
+					window.location.href = "/slack/oauth/install";
+					return null;
+				}}
+			/>
 			<Route element={<AppLayout />}>
 				<Route path="dashboard" element={<HealthPage />} />
 				<Route path="overview" element={<OverviewPage />} />
