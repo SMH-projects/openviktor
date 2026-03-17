@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { buildSandboxEnv } from "../sandbox-env.js";
 
+function unsetEnv(key: string): void {
+	Reflect.deleteProperty(process.env, key);
+}
+
 describe("buildSandboxEnv", () => {
 	it("includes only allowlisted environment variables", () => {
 		const env = buildSandboxEnv("/workspace");
@@ -49,7 +53,7 @@ describe("buildSandboxEnv", () => {
 			}
 		} finally {
 			for (const key of secrets) {
-				delete process.env[key];
+				unsetEnv(key);
 			}
 		}
 	});
@@ -62,8 +66,8 @@ describe("buildSandboxEnv", () => {
 	it("provides sensible defaults for LANG and TERM", () => {
 		const origLang = process.env.LANG;
 		const origTerm = process.env.TERM;
-		delete process.env.LANG;
-		delete process.env.TERM;
+		unsetEnv("LANG");
+		unsetEnv("TERM");
 
 		try {
 			const env = buildSandboxEnv("/workspace");

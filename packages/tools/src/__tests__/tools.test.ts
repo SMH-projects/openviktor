@@ -65,7 +65,7 @@ describe("bash", () => {
 			expect(output.stdout).not.toContain("SUPER_SECRET_KEY");
 		} finally {
 			if (originalEnv === undefined) {
-				delete process.env.SUPER_SECRET_KEY;
+				Reflect.deleteProperty(process.env, "SUPER_SECRET_KEY");
 			} else {
 				process.env.SUPER_SECRET_KEY = originalEnv;
 			}
