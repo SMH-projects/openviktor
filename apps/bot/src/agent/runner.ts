@@ -307,7 +307,10 @@ export class AgentRunner {
 					data: { status: "WAITING", phase: ThreadPhase.IDLE },
 				})
 				.catch((resetErr) => {
-					this.logger.error({ threadId: thread.id, err: resetErr }, "Failed to reset thread phase after error");
+					this.logger.error(
+						{ threadId: thread.id, err: resetErr },
+						"Failed to reset thread phase after error",
+					);
 				});
 			throw error;
 		} finally {
