@@ -39,6 +39,7 @@ import type { RegistryConfig, ToolBackend } from "@openviktor/tools";
 import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
+import { createBenchHandler } from "./bench/handler.js";
 import {
 	CronScheduler,
 	createCronJobDefinition,
@@ -824,10 +825,17 @@ async function main(): Promise<void> {
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id",
 	};
 
+	let benchHandler: ReturnType<typeof createBenchHandler> | undefined;
 	const gatewayServer = Bun.serve({
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
+
+			if (url.pathname === "/bench/message") {
+				return benchHandler
+					? benchHandler(req)
+					: Response.json({ error: "not_found" }, { status: 404 });
+			}
 
 			if (req.method === "OPTIONS") {
 				return new Response(null, { status: 204, headers: corsHeaders });
@@ -892,6 +900,29 @@ async function main(): Promise<void> {
 			botUserId,
 		);
 		registerWorkspaceToken("local", workspace.id);
+
+		if (process.env.BENCH_TOKEN) {
+			benchHandler = createBenchHandler({
+				token: process.env.BENCH_TOKEN,
+				workspaceId: workspace.id,
+				workspaceName: workspace.slackTeamName,
+				runner,
+				getContext: async () => {
+					const [skillCatalog, integrationCatalog, activeThreads] = await Promise.all([
+						fetchSkillCatalog(workspace.id),
+						fetchIntegrationCatalog(workspace.id),
+						fetchActiveThreads(prisma, workspace.id),
+					]);
+					return { skillCatalog, integrationCatalog, activeThreads };
+				},
+				getToolCalls: (agentRunId) =>
+					prisma.toolCall.findMany({
+						where: { agentRunId },
+						select: { toolName: true, status: true, durationMs: true, output: true },
+						orderBy: { createdAt: "asc" },
+					}),
+			});
+		}
 
 		// Register existing Bolt app in ConnectionManager for health checks and dashboard API
 		// (don't create a second SocketModeConnection)

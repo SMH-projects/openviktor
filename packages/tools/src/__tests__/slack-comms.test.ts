@@ -50,6 +50,27 @@ describe("coworker_send_slack_message", () => {
 	});
 
 	describe("reflection gate", () => {
+		it("captures bench messages without calling Slack", async () => {
+			const before = mockFetch.mock.calls.length;
+			const executors = createSlackToolExecutors(FAKE_TOKEN);
+			const result = await executors.coworker_send_slack_message(
+				{
+					channel_id: "C123",
+					blocks: [{ type: "section", text: { type: "mrkdwn", text: "Bench answer" } }],
+					reflection: "Ready to answer",
+					do_send: true,
+					_bench: true,
+				},
+				ctx,
+			);
+			expect(result.output).toMatchObject({
+				status: "sent",
+				channel_id: "__bench__",
+				text: "Bench answer",
+			});
+			expect(mockFetch.mock.calls.length).toBe(before);
+		});
+
 		it("suppresses message when do_send is false", async () => {
 			const executors = createSlackToolExecutors(FAKE_TOKEN);
 			const result = await executors.coworker_send_slack_message(

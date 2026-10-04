@@ -933,7 +933,13 @@ export class AgentRunner {
 			};
 		}
 
-		const inputWithContext = { ...toolUse.input, _agentRunId: agentRunId };
+		const inputWithContext = {
+			...toolUse.input,
+			_agentRunId: agentRunId,
+			...(toolUse.name === "coworker_send_slack_message"
+				? { _bench: slackChannel === "__bench__" }
+				: {}),
+		};
 
 		this.logger.info({ tool: toolUse.name, agentRunId }, "Calling tool gateway");
 		const result = await this.toolConfig.client.call(toolUse.name, inputWithContext);

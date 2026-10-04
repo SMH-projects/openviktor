@@ -612,6 +612,17 @@ function createCoworkerSendSlackMessageExecutor(slackToken: string): ToolExecuto
 					durationMs: 0,
 				};
 			}
+			if (args._bench === true) {
+				return {
+					output: {
+						status: "sent",
+						channel_id: "__bench__",
+						ts: `bench-${Date.now()}`,
+						text: parsed.text,
+					},
+					durationMs: 0,
+				};
+			}
 			const result = await executeSendOrUpdate(slackToken, parsed);
 			logSentMessage(result, ctx, parsed);
 			return result;

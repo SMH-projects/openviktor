@@ -40,6 +40,7 @@ services:
       context: ..
       dockerfile: apps/bot/Dockerfile
       args:
+        INSTALL_OS_TOOLS: ${INSTALL_OS_TOOLS:-true}
         http_proxy: ${HTTP_PROXY:-}
         https_proxy: ${HTTPS_PROXY:-}
         no_proxy: ${NO_PROXY:-localhost,127.0.0.1,postgres,redis}
@@ -47,6 +48,8 @@ services:
         HTTPS_PROXY: ${HTTPS_PROXY:-}
         NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,postgres,redis}
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,7 +77,7 @@ services:
     volumes:
       - workspace_data:/data/workspaces
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:3001/api/health || exit 1"]
+      test: ["CMD", "bun", "-e", "fetch('http://127.0.0.1:3001/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
