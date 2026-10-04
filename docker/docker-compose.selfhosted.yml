@@ -39,6 +39,13 @@ services:
     build:
       context: ..
       dockerfile: apps/bot/Dockerfile
+      args:
+        http_proxy: ${HTTP_PROXY:-}
+        https_proxy: ${HTTPS_PROXY:-}
+        no_proxy: ${NO_PROXY:-localhost,127.0.0.1,postgres,redis}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,postgres,redis}
     restart: unless-stopped
     depends_on:
       postgres:
