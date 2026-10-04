@@ -56,6 +56,13 @@ const BENCH_SLACK_MUTATIONS = new Set([
 	"send_message_to_thread",
 ]);
 
+function suppressBenchSlackAction(name: string): boolean {
+	if (BENCH_SLACK_MUTATIONS.has(name)) return true;
+	if (!name.startsWith("mcp_pd_slack_")) return false;
+	const action = name.slice("mcp_pd_slack_".length);
+	return !/^(get|list|search|find|fetch|retrieve|lookup|read|history)_/.test(action);
+}
+
 const MAX_TOOL_OUTPUT_CHARS = 50_000;
 
 function truncateToolOutput(output: string): string {
@@ -957,8 +964,7 @@ export class AgentRunner {
 
 		this.logger.info({ tool: toolUse.name, agentRunId }, "Calling tool gateway");
 		const result: ToolResult =
-			isBench &&
-			(BENCH_SLACK_MUTATIONS.has(toolUse.name) || toolUse.name.startsWith("mcp_pd_slack_"))
+			isBench && suppressBenchSlackAction(toolUse.name)
 				? {
 						output: { status: "suppressed", reason: "Slack action withheld in bench transport" },
 						durationMs: 0,
