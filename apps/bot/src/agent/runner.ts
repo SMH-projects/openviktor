@@ -6,6 +6,7 @@ import type {
 	LLMResponse,
 	LLMToolDefinition,
 	Logger,
+	ToolResult,
 	ToolUseBlock,
 	TriggerType,
 } from "@openviktor/shared";
@@ -39,6 +40,20 @@ const SEND_TOOL_NAMES = new Set([
 	"coworker_send_slack_message",
 	"send_message_to_thread",
 	"create_thread",
+]);
+
+const BENCH_SLACK_MUTATIONS = new Set([
+	"coworker_slack_react",
+	"coworker_delete_slack_message",
+	"coworker_update_slack_message",
+	"coworker_upload_to_slack",
+	"coworker_join_slack_channels",
+	"coworker_open_slack_conversation",
+	"coworker_leave_slack_channels",
+	"coworker_invite_slack_user_to_team",
+	"coworker_report_issue",
+	"create_thread",
+	"send_message_to_thread",
 ]);
 
 const MAX_TOOL_OUTPUT_CHARS = 50_000;
@@ -558,10 +573,7 @@ export class AgentRunner {
 		let totalCostCents = 0;
 		let messageSent = false;
 
-		const isBench = slackChannel === "__bench__";
-		const activeTools = this.toolConfig
-			? this.toolConfig.tools.filter((tool) => !isBench || tool.name === "coworker_send_slack_message")
-			: [];
+		const activeTools = this.toolConfig ? [...this.toolConfig.tools] : [];
 		const loadedSkills = new Set<string>();
 
 		for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -625,7 +637,7 @@ export class AgentRunner {
 				slackThreadTs,
 			);
 			if (sentMessage) messageSent = true;
-			if (!isBench) this.mergeHotLoadedTools(activeTools, loadedSkills, hotLoadedTools);
+			this.mergeHotLoadedTools(activeTools, loadedSkills, hotLoadedTools);
 
 			messages.push({ role: "user", content: toolResults });
 
@@ -912,18 +924,6 @@ export class AgentRunner {
 		slackChannel?: string,
 		slackThreadTs?: string,
 	): Promise<{ block: ContentBlock; rawOutput: Record<string, unknown> | null }> {
-		if (slackChannel === "__bench__" && toolUse.name !== "coworker_send_slack_message") {
-			await this.persistToolCall(agentRunId, toolUse, "FAILED", 0, null, "Unavailable in bench mode");
-			return {
-				block: {
-					type: "tool_result",
-					tool_use_id: toolUse.id,
-					content: "This tool is unavailable in bench mode. Answer using the supplied context.",
-					is_error: true,
-				},
-				rawOutput: null,
-			};
-		}
 		if (!this.toolConfig) {
 			this.logger.warn(
 				{ tool: toolUse.name, agentRunId },
@@ -948,18 +948,35 @@ export class AgentRunner {
 			};
 		}
 
+		const isBench = slackChannel === "__bench__";
 		const inputWithContext = {
 			...toolUse.input,
 			_agentRunId: agentRunId,
-			...(toolUse.name === "coworker_send_slack_message"
-				? { _bench: slackChannel === "__bench__" }
-				: {}),
+			...(toolUse.name === "coworker_send_slack_message" ? { _bench: isBench } : {}),
 		};
 
 		this.logger.info({ tool: toolUse.name, agentRunId }, "Calling tool gateway");
-		const result = await this.toolConfig.client.call(toolUse.name, inputWithContext);
+		const result: ToolResult =
+			isBench && BENCH_SLACK_MUTATIONS.has(toolUse.name)
+				? {
+						output: { status: "suppressed", reason: "Slack action withheld in bench transport" },
+						durationMs: 0,
+					}
+				: await this.toolConfig.client.call(toolUse.name, inputWithContext);
 
 		if (result.output && isPermissionRequired(result.output)) {
+			if (isBench) {
+				const { permissionRequestId, toolName } = result.output;
+				await this.prisma.permissionRequest.updateMany({
+					where: { id: permissionRequestId, status: "PENDING" },
+					data: { status: "APPROVED", approvedBy: "bench-owner", resolvedAt: new Date() },
+				});
+				this.logger.info(
+					{ agentRunId, permissionRequestId, tool: toolName },
+					"Bench owner approved tool",
+				);
+				return this.reExecuteApprovedTool(toolUse, agentRunId, permissionRequestId);
+			}
 			return this.handlePermissionGate(
 				result.output,
 				toolUse,

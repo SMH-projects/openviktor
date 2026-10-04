@@ -511,6 +511,19 @@ function extractTextFromBlocks(blocks: unknown[]): string {
 	return texts.join("\n") || "New message";
 }
 
+function extractBenchBlockText(value: unknown): string[] {
+	if (Array.isArray(value)) return value.flatMap(extractBenchBlockText);
+	if (!value || typeof value !== "object") return [];
+	const block = value as Record<string, unknown>;
+	if (block.type === "actions" || block.type === "input") return [];
+	if (typeof block.text === "string") return [block.text];
+	return [
+		...extractBenchBlockText(block.text),
+		...extractBenchBlockText(block.fields),
+		...extractBenchBlockText(block.elements),
+	];
+}
+
 function parseSendMessageArgs(args: Record<string, unknown>): SendMessageArgs {
 	const channelId = resolveChannelId(args);
 	const messageType = getOptionalString(args, "message_type") ?? "regular";
@@ -618,7 +631,7 @@ function createCoworkerSendSlackMessageExecutor(slackToken: string): ToolExecuto
 						status: "sent",
 						channel_id: "__bench__",
 						ts: `bench-${Date.now()}`,
-						text: parsed.text,
+						text: extractBenchBlockText(parsed.blocks).join("\n\n") || parsed.text,
 					},
 					durationMs: 0,
 				};
