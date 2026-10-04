@@ -919,7 +919,7 @@ async function main(): Promise<void> {
 					prisma.toolCall.findMany({
 						where: { agentRunId },
 						select: { toolName: true, status: true, durationMs: true, output: true },
-						orderBy: { createdAt: "asc" },
+						orderBy: [{ createdAt: "asc" }, { id: "asc" }],
 					}),
 			});
 		}

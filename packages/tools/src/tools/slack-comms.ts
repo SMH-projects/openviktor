@@ -632,6 +632,7 @@ function createCoworkerSendSlackMessageExecutor(slackToken: string): ToolExecuto
 						channel_id: "__bench__",
 						ts: `bench-${Date.now()}`,
 						text: extractBenchBlockText(parsed.blocks).join("\n\n") || parsed.text,
+						blocks: parsed.blocks,
 					},
 					durationMs: 0,
 				};

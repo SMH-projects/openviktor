@@ -41,20 +41,21 @@ function errorStatus(error: unknown): 409 | 429 | 500 {
 		: 500;
 }
 
-function benchResponse(
+function outgoingMessages(
 	toolCalls: Array<{ toolName: string; status: string; output?: unknown }>,
-	fallback: string,
-): string {
-	const sent = toolCalls
+) {
+	return toolCalls
 		.filter(
 			(call) => call.toolName === "coworker_send_slack_message" && call.status === "COMPLETED",
 		)
 		.map((call) => call.output)
 		.filter((output): output is Record<string, unknown> => !!output && typeof output === "object")
 		.filter((output) => output.channel_id === "__bench__" && output.status === "sent")
-		.map((output) => output.text)
-		.filter((value): value is string => typeof value === "string");
-	return sent.length > 0 ? sent.join("\n") : fallback;
+		.map((output) => ({
+			text: typeof output.text === "string" ? output.text : "",
+			blocks: Array.isArray(output.blocks) ? output.blocks : [],
+			ts: typeof output.ts === "string" ? output.ts : "",
+		}));
 }
 
 export function createBenchHandler(deps: BenchDeps): (req: Request) => Promise<Response> {
@@ -95,10 +96,13 @@ export function createBenchHandler(deps: BenchDeps): (req: Request) => Promise<R
 				},
 			});
 			const toolCalls = await deps.getToolCalls(result.agentRunId);
+			const messages = outgoingMessages(toolCalls);
 			return Response.json({
 				status: "ok",
 				thread_id: threadId,
-				response_text: benchResponse(toolCalls, result.responseText),
+				response_text:
+					messages.length > 0 ? messages.map((item) => item.text).join("\n") : result.responseText,
+				outgoing_messages: messages,
 				message_sent: result.messageSent,
 				agent_run_id: result.agentRunId,
 				duration_ms: result.durationMs,

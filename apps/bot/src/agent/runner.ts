@@ -957,7 +957,8 @@ export class AgentRunner {
 
 		this.logger.info({ tool: toolUse.name, agentRunId }, "Calling tool gateway");
 		const result: ToolResult =
-			isBench && BENCH_SLACK_MUTATIONS.has(toolUse.name)
+			isBench &&
+			(BENCH_SLACK_MUTATIONS.has(toolUse.name) || toolUse.name.startsWith("mcp_pd_slack_"))
 				? {
 						output: { status: "suppressed", reason: "Slack action withheld in bench transport" },
 						durationMs: 0,

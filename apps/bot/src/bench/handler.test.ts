@@ -81,11 +81,17 @@ describe("bench message transport", () => {
 				toolName: "coworker_send_slack_message",
 				status: "COMPLETED",
 				durationMs: 0,
-				output: { status: "sent", channel_id: "__bench__", text: "Hello from tool" },
+				output: {
+					status: "sent",
+					channel_id: "__bench__",
+					text: "Hello from tool",
+					blocks: [{ type: "section", text: { type: "mrkdwn", text: "Hello from tool" } }],
+				},
 			},
 		]);
 		const response = await handler(request({ thread_id: "case-2", text: "Hello" }));
-		const body = (await response.json()) as { response_text: string };
+		const body = (await response.json()) as { response_text: string; outgoing_messages: unknown[] };
 		expect(body.response_text).toBe("Hello from tool");
+		expect(body.outgoing_messages).toHaveLength(1);
 	});
 });
