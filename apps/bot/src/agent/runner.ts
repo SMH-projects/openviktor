@@ -558,7 +558,10 @@ export class AgentRunner {
 		let totalCostCents = 0;
 		let messageSent = false;
 
-		const activeTools = this.toolConfig ? [...this.toolConfig.tools] : [];
+		const isBench = slackChannel === "__bench__";
+		const activeTools = this.toolConfig
+			? this.toolConfig.tools.filter((tool) => !isBench || tool.name === "coworker_send_slack_message")
+			: [];
 		const loadedSkills = new Set<string>();
 
 		for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
@@ -622,7 +625,7 @@ export class AgentRunner {
 				slackThreadTs,
 			);
 			if (sentMessage) messageSent = true;
-			this.mergeHotLoadedTools(activeTools, loadedSkills, hotLoadedTools);
+			if (!isBench) this.mergeHotLoadedTools(activeTools, loadedSkills, hotLoadedTools);
 
 			messages.push({ role: "user", content: toolResults });
 
@@ -909,6 +912,18 @@ export class AgentRunner {
 		slackChannel?: string,
 		slackThreadTs?: string,
 	): Promise<{ block: ContentBlock; rawOutput: Record<string, unknown> | null }> {
+		if (slackChannel === "__bench__" && toolUse.name !== "coworker_send_slack_message") {
+			await this.persistToolCall(agentRunId, toolUse, "FAILED", 0, null, "Unavailable in bench mode");
+			return {
+				block: {
+					type: "tool_result",
+					tool_use_id: toolUse.id,
+					content: "This tool is unavailable in bench mode. Answer using the supplied context.",
+					is_error: true,
+				},
+				rawOutput: null,
+			};
+		}
 		if (!this.toolConfig) {
 			this.logger.warn(
 				{ tool: toolUse.name, agentRunId },
