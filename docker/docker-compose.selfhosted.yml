@@ -38,13 +38,15 @@ services:
   bot:
     build:
       context: ..
-      dockerfile: docker/Dockerfile
+      dockerfile: apps/bot/Dockerfile
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql://openviktor:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/openviktor
       REDIS_URL: redis://redis:6379
@@ -53,6 +55,8 @@ services:
       SLACK_APP_TOKEN: ${SLACK_APP_TOKEN}
       SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:?ANTHROPIC_BASE_URL is required}
+      DEFAULT_MODEL: ${DEFAULT_MODEL:?DEFAULT_MODEL is required}
       DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
       ENABLE_DASHBOARD: ${ENABLE_DASHBOARD:-true}
       NODE_ENV: production
