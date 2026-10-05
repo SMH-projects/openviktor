@@ -15,6 +15,7 @@ function makeHandler() {
 	const getToolCalls = vi
 		.fn()
 		.mockResolvedValue([{ toolName: "calculator", status: "COMPLETED", durationMs: 12 }]);
+	const getAvailableTools = vi.fn().mockReturnValue(["calculator"]);
 	const handler = createBenchHandler({
 		token: "a".repeat(64),
 		workspaceId: "workspace-1",
@@ -26,8 +27,9 @@ function makeHandler() {
 			activeThreads: [],
 		}),
 		getToolCalls,
+		getAvailableTools,
 	});
-	return { handler, run, getToolCalls };
+	return { handler, run, getToolCalls, getAvailableTools };
 }
 
 function request(body: unknown, token = "a".repeat(64)): Request {
@@ -68,10 +70,54 @@ describe("bench message transport", () => {
 		expect(await response.json()).toMatchObject({
 			status: "ok",
 			response_text: "Done",
+			available_tools: ["calculator"],
 			input_tokens: 10,
 			output_tokens: 4,
 			tool_calls: [{ name: "calculator", status: "COMPLETED" }],
 		});
+	});
+
+	it("captures the tool inventory for each request instead of a stale startup snapshot", async () => {
+		const { handler, getAvailableTools } = makeHandler();
+		getAvailableTools
+			.mockReturnValueOnce(["calculator"])
+			.mockReturnValueOnce(["calculator", "search"]);
+		const first = await handler(request({ thread_id: "first", text: "Hello" }));
+		const second = await handler(request({ thread_id: "second", text: "Hello" }));
+		expect(((await first.json()) as { available_tools: string[] }).available_tools).toEqual([
+			"calculator",
+		]);
+		expect(((await second.json()) as { available_tools: string[] }).available_tools).toEqual([
+			"calculator",
+			"search",
+		]);
+	});
+
+	it("reports an empty agent answer as failure without changing the agent run", async () => {
+		const { handler, run } = makeHandler();
+		run.mockResolvedValueOnce({
+			agentRunId: "run-empty",
+			threadId: "thread-empty",
+			responseText: " \n ",
+			messageSent: false,
+			inputTokens: 39408,
+			outputTokens: 6406,
+			costCents: 23.3893,
+			durationMs: 41469,
+		});
+		const response = await handler(
+			request({ thread_id: "case-empty", text: "Make a spreadsheet" }),
+		);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({
+			status: "no_answer",
+			response_text: " \n ",
+			message_sent: false,
+			agent_run_id: "run-empty",
+			input_tokens: 39408,
+			output_tokens: 6406,
+		});
+		expect(run).toHaveBeenCalledTimes(1);
 	});
 
 	it("returns the message captured by the bench transport", async () => {
