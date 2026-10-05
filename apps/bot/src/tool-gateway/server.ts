@@ -15,22 +15,61 @@ interface GatewayDeps {
 }
 
 const TOKEN_WORKSPACE_MAP = new Map<string, string>();
+const DISCOVERY_WORKSPACE_MAP = new Map<string, string>();
+const DISCOVERY_TOOL_ALLOWLIST = new Map<string, ReadonlySet<string>>();
 
 export function registerWorkspaceToken(token: string, workspaceId: string): void {
+	const discoveryWorkspace = DISCOVERY_WORKSPACE_MAP.get(token);
+	if (discoveryWorkspace && discoveryWorkspace !== workspaceId) {
+		throw new Error("A discovery token cannot change workspaces");
+	}
 	TOKEN_WORKSPACE_MAP.set(token, workspaceId);
+}
+
+export function registerDiscoveryToken(
+	token: string,
+	workspaceId: string,
+	allowedTools: string[],
+): void {
+	if (
+		!/^[\x21-\x7e]{32,}$/.test(token) ||
+		!workspaceId ||
+		token === "local" ||
+		!allowedTools.length ||
+		allowedTools.some((name) => !name.trim())
+	) {
+		throw new Error("A dedicated workspace discovery token is required");
+	}
+	const existing = DISCOVERY_WORKSPACE_MAP.get(token) ?? TOKEN_WORKSPACE_MAP.get(token);
+	if (existing && existing !== workspaceId) {
+		throw new Error("A discovery token cannot change workspaces");
+	}
+	const priorTools = DISCOVERY_TOOL_ALLOWLIST.get(token);
+	if (
+		priorTools &&
+		(priorTools.size !== new Set(allowedTools).size ||
+			allowedTools.some((name) => !priorTools.has(name)))
+	) {
+		throw new Error("A discovery token cannot change its allowed tools");
+	}
+	DISCOVERY_WORKSPACE_MAP.set(token, workspaceId);
+	DISCOVERY_TOOL_ALLOWLIST.set(token, new Set(allowedTools));
+	registerWorkspaceToken(token, workspaceId);
 }
 
 export function resolveWorkspaceFromToken(token: string): string | null {
 	return TOKEN_WORKSPACE_MAP.get(token) ?? null;
 }
 
-function validateAuth(req: Request): string | Response {
+function validateAuth(req: Request, discovery = false): string | Response {
 	const authHeader = req.headers.get("authorization");
 	if (!authHeader?.startsWith("Bearer ")) {
 		return Response.json({ error: "Unauthorized" }, { status: 401 });
 	}
 	const token = authHeader.slice(7);
-	const workspaceId = resolveWorkspaceFromToken(token);
+	const workspaceId = discovery
+		? DISCOVERY_WORKSPACE_MAP.get(token)
+		: resolveWorkspaceFromToken(token);
 	if (!workspaceId) {
 		return Response.json({ error: "Invalid token" }, { status: 403 });
 	}
@@ -103,15 +142,35 @@ export function createToolGateway(deps: GatewayDeps): {
 				return Response.json({ status: "ok", tools: registry.getAllDefinitions().length });
 			}
 
-			if (req.method !== "POST" || url.pathname !== "/v1/tools/call") {
+			if (
+				!(
+					(req.method === "POST" && url.pathname === "/v1/tools/call") ||
+					(req.method === "GET" && url.pathname === "/v1/tools")
+				)
+			) {
 				return Response.json({ error: "Not found" }, { status: 404 });
 			}
 
-			const authResult = validateAuth(req);
+			const authResult = validateAuth(req, req.method === "GET");
 			if (authResult instanceof Response) return authResult;
+			const allowed = DISCOVERY_TOOL_ALLOWLIST.get(
+				req.headers.get("authorization")?.slice(7) ?? "",
+			);
+
+			if (req.method === "GET" && url.pathname === "/v1/tools") {
+				return Response.json({
+					workspaceId: authResult,
+					tools: registry
+						.getDefinitionsForWorkspace(authResult)
+						.filter((tool) => allowed?.has(tool.name)),
+				});
+			}
 
 			const bodyResult = await parseBody(req);
 			if (bodyResult instanceof Response) return bodyResult;
+			if (allowed && !allowed.has(bodyResult.role)) {
+				return Response.json({ error: "Tool not allowed for this token" }, { status: 403 });
+			}
 
 			return handleToolCall(authResult, bodyResult);
 		},

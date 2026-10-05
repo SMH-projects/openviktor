@@ -83,7 +83,11 @@ import { fetchActiveThreads } from "./thread/index.js";
 import { ThreadLock } from "./thread/lock.js";
 import { StaleThreadDetector } from "./thread/stale.js";
 import { createDashboardApi } from "./tool-gateway/dashboard-api.js";
-import { createToolGateway, registerWorkspaceToken } from "./tool-gateway/server.js";
+import {
+	createToolGateway,
+	registerDiscoveryToken,
+	registerWorkspaceToken,
+} from "./tool-gateway/server.js";
 import { UsageLimiter } from "./usage/limiter.js";
 import { UsageTracker } from "./usage/tracker.js";
 
@@ -170,6 +174,17 @@ async function main(): Promise<void> {
 		timeoutMs: config.TOOL_TIMEOUT_MS,
 	});
 	registerWorkspaceToken("local", "default");
+	const discoveryToken = process.env.VIKTOR_DISCOVERY_TOKEN;
+	const discoveryWorkspace = process.env.VIKTOR_DISCOVERY_WORKSPACE_ID;
+	const discoveryTools = process.env.VIKTOR_DISCOVERY_ALLOWED_TOOLS;
+	if (discoveryToken || discoveryWorkspace || discoveryTools) {
+		if (!discoveryToken || !discoveryWorkspace || !discoveryTools) {
+			throw new Error(
+				"VIKTOR_DISCOVERY_TOKEN, VIKTOR_DISCOVERY_WORKSPACE_ID and VIKTOR_DISCOVERY_ALLOWED_TOOLS are required",
+			);
+		}
+		registerDiscoveryToken(discoveryToken, discoveryWorkspace, discoveryTools.split(","));
+	}
 
 	const concurrencyLimiter = await createConcurrencyLimiter(
 		config.MAX_CONCURRENT_RUNS,

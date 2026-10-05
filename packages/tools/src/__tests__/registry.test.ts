@@ -167,6 +167,51 @@ describe("ToolRegistry", () => {
 		expect(allDefs.map((d) => d.name)).toEqual(["core", "disco"]);
 	});
 
+	it("lists callable global and own workspace tools without leaking other workspace schemas", () => {
+		registry.register(
+			"global",
+			{ name: "global", description: "Global", input_schema: {} },
+			echoExecutor,
+		);
+		registry.register(
+			"same",
+			{ name: "same", description: "Global version", input_schema: {} },
+			echoExecutor,
+		);
+		registry.registerScoped(
+			"ws_test",
+			"same",
+			{ name: "same", description: "Own version", input_schema: {} },
+			echoExecutor,
+		);
+		registry.registerScoped(
+			"ws_test",
+			"own",
+			{ name: "own", description: "Own", input_schema: {} },
+			echoExecutor,
+		);
+		registry.registerScoped(
+			"ws_other",
+			"foreign",
+			{ name: "foreign", description: "Foreign", input_schema: {} },
+			echoExecutor,
+		);
+		expect(registry.getDefinitionsForWorkspace("ws_test").map((tool) => tool.name)).toEqual([
+			"global",
+			"same",
+			"own",
+		]);
+		expect(
+			registry.getDefinitionsForWorkspace("ws_test").find((tool) => tool.name === "same")
+				?.description,
+		).toBe("Own version");
+		expect(registry.getDefinitionsForWorkspace("ws_other").map((tool) => tool.name)).toEqual([
+			"global",
+			"same",
+			"foreign",
+		]);
+	});
+
 	it("returns only discoverable tools from getDiscoverableDefinitions()", () => {
 		registry.register(
 			"core",

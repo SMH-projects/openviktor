@@ -100,6 +100,18 @@ export class ToolRegistry {
 		return Array.from(this.tools.values()).map((t) => t.definition);
 	}
 
+	getDefinitionsForWorkspace(workspaceId: string): LLMToolDefinition[] {
+		const prefix = `ws:${workspaceId}:`;
+		const definitions = new Map<string, LLMToolDefinition>();
+		for (const [key, tool] of this.tools) {
+			if (!key.startsWith("ws:")) definitions.set(key, tool.definition);
+		}
+		for (const [key, tool] of this.tools) {
+			if (key.startsWith(prefix)) definitions.set(key.slice(prefix.length), tool.definition);
+		}
+		return Array.from(definitions.values());
+	}
+
 	getDiscoverableDefinitions(prefix?: string, workspaceId?: string): LLMToolDefinition[] {
 		return Array.from(this.tools.entries())
 			.filter(([key, t]) => {
