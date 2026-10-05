@@ -21,10 +21,10 @@ CMD ["sh", "-c", "bun run --filter @openviktor/db db:migrate:deploy && bun --wat
 
 FROM base AS runner
 ARG INSTALL_OS_TOOLS=true
+COPY --from=deps /app/node_modules ./node_modules
 RUN if [ "$INSTALL_OS_TOOLS" = "true" ]; then \
       apt-get update && apt-get install -y --no-install-recommends curl ripgrep && rm -rf /var/lib/apt/lists/*; \
     fi
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN bun install && bun run --cwd packages/db db:generate
 CMD ["sh", "-c", "bun run --filter @openviktor/db db:migrate:deploy && bun run apps/bot/src/index.ts"]
