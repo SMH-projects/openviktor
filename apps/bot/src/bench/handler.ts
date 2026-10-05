@@ -17,6 +17,7 @@ interface BenchDeps {
 	) => Promise<
 		Array<{ toolName: string; status: string; durationMs: number | null; output?: unknown }>
 	>;
+	getAvailableTools: () => string[];
 }
 
 function authorized(header: string | null, token: string): boolean {
@@ -80,6 +81,7 @@ export function createBenchHandler(deps: BenchDeps): (req: Request) => Promise<R
 
 		try {
 			const context = await deps.getContext();
+			const availableTools = deps.getAvailableTools();
 			const result = await deps.runner.run({
 				workspaceId: deps.workspaceId,
 				memberId: null,
@@ -97,11 +99,12 @@ export function createBenchHandler(deps: BenchDeps): (req: Request) => Promise<R
 			});
 			const toolCalls = await deps.getToolCalls(result.agentRunId);
 			const messages = outgoingMessages(toolCalls);
+			const responseText =
+				messages.length > 0 ? messages.map((item) => item.text).join("\n") : result.responseText;
 			return Response.json({
-				status: "ok",
+				status: responseText.trim() ? "ok" : "no_answer",
 				thread_id: threadId,
-				response_text:
-					messages.length > 0 ? messages.map((item) => item.text).join("\n") : result.responseText,
+				response_text: responseText,
 				outgoing_messages: messages,
 				message_sent: result.messageSent,
 				agent_run_id: result.agentRunId,
@@ -109,6 +112,7 @@ export function createBenchHandler(deps: BenchDeps): (req: Request) => Promise<R
 				input_tokens: result.inputTokens,
 				output_tokens: result.outputTokens,
 				cost_cents: result.costCents,
+				available_tools: availableTools,
 				tool_calls: toolCalls.map((call) => ({
 					name: call.toolName,
 					status: call.status,

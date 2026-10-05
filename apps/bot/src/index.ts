@@ -921,6 +921,7 @@ async function main(): Promise<void> {
 						select: { toolName: true, status: true, durationMs: true, output: true },
 						orderBy: [{ createdAt: "asc" }, { id: "asc" }],
 					}),
+				getAvailableTools: () => registry.getDefinitions().map((tool) => tool.name),
 			});
 		}
 
