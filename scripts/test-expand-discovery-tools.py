@@ -44,6 +44,25 @@ class ExpandDiscoveryTests(unittest.TestCase):
                 module.expand(link, "ws_test")
             self.assertEqual(path.read_bytes(), before)
 
+    def test_shared_bearer_and_concurrent_provisioning_are_refused(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "bot.env"
+            token = "b" * 64
+            path.write_text(f"SLACK_BOT_TOKEN={token}\nVIKTOR_DISCOVERY_TOKEN={token}\n"
+                            "VIKTOR_DISCOVERY_WORKSPACE_ID=ws_test\n"
+                            "VIKTOR_DISCOVERY_ALLOWED_TOOLS=read_learnings\n")
+            os.chmod(path, 0o600)
+            original = path.read_bytes()
+            with self.assertRaises(ValueError):
+                module.expand(path, "ws_test")
+            self.assertEqual(path.read_bytes(), original)
+            path.write_text(path.read_text().replace(f"SLACK_BOT_TOKEN={token}", "SLACK_BOT_TOKEN=other"))
+            lock = Path(str(path) + ".viktor.lock")
+            lock.mkdir()
+            with self.assertRaises(FileExistsError):
+                module.expand(path, "ws_test")
+            self.assertIn(b"VIKTOR_DISCOVERY_ALLOWED_TOOLS=read_learnings", path.read_bytes())
+
 
 if __name__ == "__main__":
     unittest.main()
