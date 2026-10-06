@@ -23,6 +23,20 @@ if [ "$mode" != 600 ]; then
   exit 2
 fi
 
+lock_dir="${env_file}.viktor.lock"
+if ! mkdir -- "$lock_dir" 2>/dev/null; then
+  echo 'discovery provisioning already running or lock needs manual inspection' >&2
+  exit 2
+fi
+temp_file=
+cleanup() {
+  if [ -n "$temp_file" ]; then
+    rm -f -- "$temp_file"
+  fi
+  rmdir -- "$lock_dir"
+}
+trap cleanup EXIT
+
 if grep -q '^VIKTOR_DISCOVERY_' "$env_file"; then
   existing_token=$(sed -n 's/^VIKTOR_DISCOVERY_TOKEN=//p' "$env_file")
   if [ "${#existing_token}" -ge 32 ] &&
@@ -39,11 +53,14 @@ if grep -q '^VIKTOR_DISCOVERY_' "$env_file"; then
 fi
 
 temp_file=$(mktemp "${env_file}.viktor.XXXXXX")
-trap 'rm -f -- "$temp_file"' EXIT
 chmod 600 "$temp_file"
 cat -- "$env_file" > "$temp_file"
+if ! generated_token=$(openssl rand -hex 32) || [[ ! "$generated_token" =~ ^[0-9a-f]{64}$ ]]; then
+  echo 'cryptographic token generation failed; environment unchanged' >&2
+  exit 2
+fi
 printf '\nVIKTOR_DISCOVERY_TOKEN=%s\nVIKTOR_DISCOVERY_WORKSPACE_ID=%s\nVIKTOR_DISCOVERY_ALLOWED_TOOLS=%s\n' \
-  "$(openssl rand -hex 32)" "$workspace_id" "$allowed_tools" >> "$temp_file"
+  "$generated_token" "$workspace_id" "$allowed_tools" >> "$temp_file"
 mv -- "$temp_file" "$env_file"
-trap - EXIT
+temp_file=
 echo 'dedicated discovery configuration installed (0600; no token printed)'
