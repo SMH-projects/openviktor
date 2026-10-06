@@ -54,6 +54,22 @@ describe("tool gateway discovery", () => {
 		expect(registry.getDefinitionsForWorkspace).toHaveBeenCalledWith("ws_test");
 	});
 
+	it("lists every live workspace tool with an explicitly full-access discovery token", async () => {
+		const fullToken = "discovery-full-workspace-secret-token-123456789";
+		registerDiscoveryToken(fullToken, "ws_test", ["*"]);
+		const response = await gateway.fetch(
+			new Request("http://localhost/v1/tools", {
+				headers: { Authorization: `Bearer ${fullToken}` },
+			}),
+		);
+		expect(response.status).toBe(200);
+		expect((await response.json()).tools.map((tool: { name: string }) => tool.name)).toEqual([
+			"current",
+			"bash",
+		]);
+		expect(() => registerDiscoveryToken(fullToken, "ws_other", ["*"])).toThrow();
+	});
+
 	it("does not expose schemas to the legacy shared local token", async () => {
 		registerWorkspaceToken("local", "ws_other");
 		const response = await gateway.fetch(

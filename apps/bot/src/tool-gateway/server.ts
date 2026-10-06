@@ -162,13 +162,13 @@ export function createToolGateway(deps: GatewayDeps): {
 					workspaceId: authResult,
 					tools: registry
 						.getDefinitionsForWorkspace(authResult)
-						.filter((tool) => allowed?.has(tool.name)),
+						.filter((tool) => allowed?.has("*") || allowed?.has(tool.name)),
 				});
 			}
 
 			const bodyResult = await parseBody(req);
 			if (bodyResult instanceof Response) return bodyResult;
-			if (allowed && !allowed.has(bodyResult.role)) {
+			if (allowed && !allowed.has("*") && !allowed.has(bodyResult.role)) {
 				return Response.json({ error: "Tool not allowed for this token" }, { status: 403 });
 			}
 
