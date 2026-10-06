@@ -15,7 +15,7 @@ class ExpandDiscoveryTests(unittest.TestCase):
     def test_exact_workspace_expands_only_scope_and_preserves_bearer(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "bot.env"
-            original = ("SLACK_BOT_TOKEN=other\nVIKTOR_DISCOVERY_TOKEN=" + "a" * 64
+            original = ("SLACK_BOT_TOKEN=other\nVIKTOR_DISCOVERY_TOKEN=" + ("Ab_-" * 16)
                         + "\nVIKTOR_DISCOVERY_WORKSPACE_ID=ws_test\n"
                         + "VIKTOR_DISCOVERY_ALLOWED_TOOLS=read_learnings\n")
             path.write_text(original)

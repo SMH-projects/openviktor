@@ -22,7 +22,7 @@ def expand_locked(path: Path, workspace: str) -> None:
         raise ValueError("invalid workspace")
     if contents.count(f"VIKTOR_DISCOVERY_WORKSPACE_ID={workspace}\n") != 1:
         raise ValueError("discovery workspace mismatch")
-    tokens = re.findall(r"^VIKTOR_DISCOVERY_TOKEN=([0-9a-f]{64})$", contents, re.MULTILINE)
+    tokens = re.findall(r"^VIKTOR_DISCOVERY_TOKEN=([A-Za-z0-9_-]{64})$", contents, re.MULTILINE)
     if len(tokens) != 1:
         raise ValueError("dedicated discovery bearer is missing or malformed")
     if any(tokens[0] in line for line in contents.splitlines() if not line.startswith("VIKTOR_DISCOVERY_TOKEN=")):
