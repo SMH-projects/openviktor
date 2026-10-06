@@ -6,6 +6,7 @@ import type {
 	LLMResponse,
 	LLMToolDefinition,
 	Logger,
+	ToolResult,
 	ToolUseBlock,
 	TriggerType,
 } from "@openviktor/shared";
@@ -40,6 +41,27 @@ const SEND_TOOL_NAMES = new Set([
 	"send_message_to_thread",
 	"create_thread",
 ]);
+
+const BENCH_SLACK_MUTATIONS = new Set([
+	"coworker_slack_react",
+	"coworker_delete_slack_message",
+	"coworker_update_slack_message",
+	"coworker_upload_to_slack",
+	"coworker_join_slack_channels",
+	"coworker_open_slack_conversation",
+	"coworker_leave_slack_channels",
+	"coworker_invite_slack_user_to_team",
+	"coworker_report_issue",
+	"create_thread",
+	"send_message_to_thread",
+]);
+
+function suppressBenchSlackAction(name: string): boolean {
+	if (BENCH_SLACK_MUTATIONS.has(name)) return true;
+	if (!name.startsWith("mcp_pd_slack_")) return false;
+	const action = name.slice("mcp_pd_slack_".length);
+	return !/^(get|list|search|find|fetch|retrieve|lookup|read|history)_/.test(action);
+}
 
 const MAX_TOOL_OUTPUT_CHARS = 50_000;
 
@@ -933,12 +955,35 @@ export class AgentRunner {
 			};
 		}
 
-		const inputWithContext = { ...toolUse.input, _agentRunId: agentRunId };
+		const isBench = slackChannel === "__bench__";
+		const inputWithContext = {
+			...toolUse.input,
+			_agentRunId: agentRunId,
+			...(toolUse.name === "coworker_send_slack_message" ? { _bench: isBench } : {}),
+		};
 
 		this.logger.info({ tool: toolUse.name, agentRunId }, "Calling tool gateway");
-		const result = await this.toolConfig.client.call(toolUse.name, inputWithContext);
+		const result: ToolResult =
+			isBench && suppressBenchSlackAction(toolUse.name)
+				? {
+						output: { status: "suppressed", reason: "Slack action withheld in bench transport" },
+						durationMs: 0,
+					}
+				: await this.toolConfig.client.call(toolUse.name, inputWithContext);
 
 		if (result.output && isPermissionRequired(result.output)) {
+			if (isBench) {
+				const { permissionRequestId, toolName } = result.output;
+				await this.prisma.permissionRequest.updateMany({
+					where: { id: permissionRequestId, status: "PENDING" },
+					data: { status: "APPROVED", approvedBy: "bench-owner", resolvedAt: new Date() },
+				});
+				this.logger.info(
+					{ agentRunId, permissionRequestId, tool: toolName },
+					"Bench owner approved tool",
+				);
+				return this.reExecuteApprovedTool(toolUse, agentRunId, permissionRequestId);
+			}
 			return this.handlePermissionGate(
 				result.output,
 				toolUse,

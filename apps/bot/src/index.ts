@@ -39,6 +39,7 @@ import type { RegistryConfig, ToolBackend } from "@openviktor/tools";
 import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
+import { createBenchHandler } from "./bench/handler.js";
 import {
 	CronScheduler,
 	createCronJobDefinition,
@@ -82,7 +83,11 @@ import { fetchActiveThreads } from "./thread/index.js";
 import { ThreadLock } from "./thread/lock.js";
 import { StaleThreadDetector } from "./thread/stale.js";
 import { createDashboardApi } from "./tool-gateway/dashboard-api.js";
-import { createToolGateway, registerWorkspaceToken } from "./tool-gateway/server.js";
+import {
+	createToolGateway,
+	registerDiscoveryToken,
+	registerWorkspaceToken,
+} from "./tool-gateway/server.js";
 import { UsageLimiter } from "./usage/limiter.js";
 import { UsageTracker } from "./usage/tracker.js";
 
@@ -169,6 +174,17 @@ async function main(): Promise<void> {
 		timeoutMs: config.TOOL_TIMEOUT_MS,
 	});
 	registerWorkspaceToken("local", "default");
+	const discoveryToken = process.env.VIKTOR_DISCOVERY_TOKEN;
+	const discoveryWorkspace = process.env.VIKTOR_DISCOVERY_WORKSPACE_ID;
+	const discoveryTools = process.env.VIKTOR_DISCOVERY_ALLOWED_TOOLS;
+	if (discoveryToken || discoveryWorkspace || discoveryTools) {
+		if (!discoveryToken || !discoveryWorkspace || !discoveryTools) {
+			throw new Error(
+				"VIKTOR_DISCOVERY_TOKEN, VIKTOR_DISCOVERY_WORKSPACE_ID and VIKTOR_DISCOVERY_ALLOWED_TOOLS are required",
+			);
+		}
+		registerDiscoveryToken(discoveryToken, discoveryWorkspace, discoveryTools.split(","));
+	}
 
 	const concurrencyLimiter = await createConcurrencyLimiter(
 		config.MAX_CONCURRENT_RUNS,
@@ -824,10 +840,17 @@ async function main(): Promise<void> {
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id",
 	};
 
+	let benchHandler: ReturnType<typeof createBenchHandler> | undefined;
 	const gatewayServer = Bun.serve({
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
+
+			if (url.pathname === "/bench/message") {
+				return benchHandler
+					? benchHandler(req)
+					: Response.json({ error: "not_found" }, { status: 404 });
+			}
 
 			if (req.method === "OPTIONS") {
 				return new Response(null, { status: 204, headers: corsHeaders });
@@ -892,6 +915,30 @@ async function main(): Promise<void> {
 			botUserId,
 		);
 		registerWorkspaceToken("local", workspace.id);
+
+		if (process.env.BENCH_TOKEN) {
+			benchHandler = createBenchHandler({
+				token: process.env.BENCH_TOKEN,
+				workspaceId: workspace.id,
+				workspaceName: workspace.slackTeamName,
+				runner,
+				getContext: async () => {
+					const [skillCatalog, integrationCatalog, activeThreads] = await Promise.all([
+						fetchSkillCatalog(workspace.id),
+						fetchIntegrationCatalog(workspace.id),
+						fetchActiveThreads(prisma, workspace.id),
+					]);
+					return { skillCatalog, integrationCatalog, activeThreads };
+				},
+				getToolCalls: (agentRunId) =>
+					prisma.toolCall.findMany({
+						where: { agentRunId },
+						select: { toolName: true, status: true, durationMs: true, output: true },
+						orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+					}),
+				getAvailableTools: () => registry.getDefinitionsForWorkspace(workspace.id).map((tool) => tool.name),
+			});
+		}
 
 		// Register existing Bolt app in ConnectionManager for health checks and dashboard API
 		// (don't create a second SocketModeConnection)
