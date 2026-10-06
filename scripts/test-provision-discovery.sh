@@ -52,9 +52,21 @@ test "$(grep -c '^VIKTOR_DISCOVERY_ALLOWED_TOOLS=read_learnings$' "$env_file")" 
 token_before=$(sed -n 's/^VIKTOR_DISCOVERY_TOKEN=//p' "$env_file")
 test "${#token_before}" -ge 32
 
-"$script_dir/provision-discovery.sh" "$env_file" cmutpkopd0000p417lswjr97k read_learnings
+if "$script_dir/provision-discovery.sh" "$env_file" cmutpkopd0000p417lswjr97k read_learnings > "$fixture/repeat-output" 2>&1; then
+  echo 'existing unverified bearer was accepted on retry' >&2
+  exit 1
+fi
 token_after=$(sed -n 's/^VIKTOR_DISCOVERY_TOKEN=//p' "$env_file")
 test "$token_before" = "$token_after"
+
+shared_secret=$(printf '%064d' 7)
+shared_env="$fixture/shared.env"
+printf 'SLACK_BOT_TOKEN=%s\nVIKTOR_DISCOVERY_TOKEN=%s\nVIKTOR_DISCOVERY_WORKSPACE_ID=cmutpkopd0000p417lswjr97k\nVIKTOR_DISCOVERY_ALLOWED_TOOLS=read_learnings\n' "$shared_secret" "$shared_secret" > "$shared_env"
+chmod 600 "$shared_env"
+if "$script_dir/provision-discovery.sh" "$shared_env" cmutpkopd0000p417lswjr97k read_learnings > "$fixture/shared-output" 2>&1; then
+  echo 'existing shared bearer was accepted' >&2
+  exit 1
+fi
 
 for bad_tool in write_learning 'read_learnings,write_learning'; do
   if "$script_dir/provision-discovery.sh" "$env_file" cmutpkopd0000p417lswjr97k "$bad_tool" >/dev/null 2>&1; then
@@ -73,4 +85,4 @@ if "$script_dir/provision-discovery.sh" "$fixture/symlink" cmutpkopd0000p417lswj
   echo 'symlink secret target was admitted' >&2
   exit 1
 fi
-echo 'provision-discovery: PASS (mode, idempotence, fail-closed, no secret output)'
+echo 'provision-discovery: PASS (mode, repeat rejection, fail-closed, no secret output)'

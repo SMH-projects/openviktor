@@ -38,17 +38,7 @@ cleanup() {
 trap cleanup EXIT
 
 if grep -q '^VIKTOR_DISCOVERY_' "$env_file"; then
-  existing_token=$(sed -n 's/^VIKTOR_DISCOVERY_TOKEN=//p' "$env_file")
-  if [ "${#existing_token}" -ge 32 ] &&
-    [ "$(grep -c '^VIKTOR_DISCOVERY_TOKEN=' "$env_file")" -eq 1 ] &&
-    [ "$(grep -c '^VIKTOR_DISCOVERY_WORKSPACE_ID=' "$env_file")" -eq 1 ] &&
-    [ "$(grep -c '^VIKTOR_DISCOVERY_ALLOWED_TOOLS=' "$env_file")" -eq 1 ] &&
-    grep -qxF "VIKTOR_DISCOVERY_WORKSPACE_ID=$workspace_id" "$env_file" &&
-    grep -qxF "VIKTOR_DISCOVERY_ALLOWED_TOOLS=$allowed_tools" "$env_file"; then
-    echo 'discovery configuration already installed; token unchanged'
-    exit 0
-  fi
-  echo 'existing discovery configuration differs; refusing implicit rotation' >&2
+  echo 'discovery already configured; refusing to trust or rotate an existing token' >&2
   exit 2
 fi
 
