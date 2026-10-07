@@ -41,7 +41,7 @@ import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
 import { readAgentGrantFile, readOwnerAgentBindingFile } from "./tool-gateway/agent-task-auth.js";
 import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
-import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
+import { createAgentTaskGateway, OWNER_READ_TOOLS } from "./tool-gateway/agent-task.js";
 import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
 import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./tool-gateway/viktor-a2a.js";
 import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
@@ -225,7 +225,7 @@ async function main(): Promise<void> {
 	const taskRuntime = grantPath
 		? createAgentTaskRuntime(prisma, runner, (workspaceId) =>
 			createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
-				registry.getDefinitions(), ["read_learnings"]))
+				registry.getDefinitions(), OWNER_READ_TOOLS))
 		: null;
 	const agentTasks = grantPath && taskRuntime
 		? createAgentTaskGateway({ lookupGrant: readAgentGrantFile(grantPath), ...taskRuntime })
