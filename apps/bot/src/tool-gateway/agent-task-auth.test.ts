@@ -2,7 +2,7 @@ import { chmodSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { readAgentGrantFile } from "./agent-task-auth.js";
+import { readAgentGrantFile, readOwnerAgentBindingFile } from "./agent-task-auth.js";
 
 const dirs: string[] = [];
 function fixture() {
@@ -17,6 +17,14 @@ function fixture() {
 afterEach(() => dirs.splice(0).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
 
 describe("Viktor owner-scoped grant file", () => {
+	it("reads only the bound owner identity and fails closed after grant removal", () => {
+		const path = fixture();
+		const binding = readOwnerAgentBindingFile(path);
+		expect(binding()).toEqual({ workspaceId: "ws-owner", principalId: "tg-123",
+			expiresAt: expect.any(Number) });
+		rmSync(path);
+		expect(binding()).toBeNull();
+	});
 	it("binds an exact token to its workspace and principal", () => {
 		const lookup = readAgentGrantFile(fixture());
 		expect(lookup("scoped-secret-012345678901234567890123")).toMatchObject({ workspaceId: "ws-owner", principalId: "tg-123" });

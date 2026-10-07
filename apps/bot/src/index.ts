@@ -39,10 +39,11 @@ import type { RegistryConfig, ToolBackend } from "@openviktor/tools";
 import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
-import { readAgentGrantFile } from "./tool-gateway/agent-task-auth.js";
+import { readAgentGrantFile, readOwnerAgentBindingFile } from "./tool-gateway/agent-task-auth.js";
 import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
 import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
 import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
+import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./tool-gateway/viktor-a2a.js";
 import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
 import { createBenchHandler } from "./bench/handler.js";
 import {
@@ -220,13 +221,28 @@ async function main(): Promise<void> {
 		(workspaceId) => createScopedToolAccess(workspaceId, gatewayPort,
 			config.TOOL_TIMEOUT_MS, registry.getDefinitions()),
 	);
-	const agentTasks = process.env.VIKTOR_TWIN_GRANT_FILE
-		? createAgentTaskGateway({
-				lookupGrant: readAgentGrantFile(process.env.VIKTOR_TWIN_GRANT_FILE),
-				...createAgentTaskRuntime(prisma, runner, (workspaceId) =>
-					createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
-						registry.getDefinitions(), ["read_learnings"])),
-			})
+	const grantPath = process.env.VIKTOR_TWIN_GRANT_FILE;
+	const taskRuntime = grantPath
+		? createAgentTaskRuntime(prisma, runner, (workspaceId) =>
+			createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
+				registry.getDefinitions(), ["read_learnings"]))
+		: null;
+	const agentTasks = grantPath && taskRuntime
+		? createAgentTaskGateway({ lookupGrant: readAgentGrantFile(grantPath), ...taskRuntime })
+		: null;
+	const a2aAudience = process.env.VIKTOR_A2A_AUDIENCE;
+	const a2aTenant = process.env.VIKTOR_A2A_TENANT;
+	const a2aPublicKeyFile = process.env.VIKTOR_A2A_PUBLIC_KEY_FILE;
+	if ([a2aAudience, a2aTenant, a2aPublicKeyFile].some(Boolean)
+		&& (!grantPath || !taskRuntime || !a2aAudience || !a2aTenant || !a2aPublicKeyFile)) {
+		throw new Error("Viktor A2A requires a scoped grant, tenant, audience and public verifier");
+	}
+	const a2aTasks = grantPath && taskRuntime && a2aAudience && a2aTenant && a2aPublicKeyFile
+		? createViktorA2AGateway({
+			publicKey: readViktorA2APublicKeyFile(a2aPublicKeyFile),
+			audience: a2aAudience, tenant: a2aTenant,
+			readBinding: readOwnerAgentBindingFile(grantPath), ...taskRuntime,
+		})
 		: null;
 
 	// Thread orchestration tools
@@ -844,6 +860,9 @@ async function main(): Promise<void> {
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
+			if (a2aAudience && url.pathname === new URL(a2aAudience).pathname) {
+				return a2aTasks ? a2aTasks.fetch(req) : Response.json({ error: "Not found" }, { status: 404 });
+			}
 			if (url.pathname === "/v1/agent/run") {
 				return agentTasks ? agentTasks.fetch(req) : Response.json({ error: "Not found" }, { status: 404 });
 			}

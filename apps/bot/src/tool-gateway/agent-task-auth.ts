@@ -44,3 +44,15 @@ export function readAgentGrantFile(path: string): (token: string) => AgentGrant 
 			? grant.binding : null;
 	};
 }
+
+export function readOwnerAgentBindingFile(path: string): () => AgentGrant | null {
+	if (!isAbsolute(path)) throw new Error("Grant file must be an absolute path");
+	loadGrant(path);
+	return (): AgentGrant | null => {
+		try {
+			return loadGrant(path).binding;
+		} catch {
+			return null;
+		}
+	};
+}

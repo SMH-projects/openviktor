@@ -45,6 +45,11 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 	}
 
 	return {
+		readTaskDigest: async (scope: Omit<AgentTask, "task">): Promise<string | null> => {
+			const thread = await reserved(scope);
+			const digest = (thread?.metadata as Record<string, unknown> | null)?.taskDigest;
+			return typeof digest === "string" && /^[a-f0-9]{64}$/.test(digest) ? digest : null;
+		},
 		readReservation: async (scope: Omit<AgentTask, "task">): Promise<"pending" | "unknown" | null> => {
 			const thread = await reserved(scope);
 			if (!thread) return null;
@@ -54,7 +59,8 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 			try {
 				await prisma.thread.create({ data: {
 					workspaceId: scope.workspaceId, slackChannel: CHANNEL, slackThreadTs: threadKey(scope),
-					metadata: { principalId: scope.principalId, requestId: scope.requestId },
+					metadata: { principalId: scope.principalId, requestId: scope.requestId,
+						taskDigest: createHash("sha256").update(scope.task).digest("hex") },
 				} });
 				return true;
 			} catch (error) {

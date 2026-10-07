@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 import { createAgentTaskRuntime } from "./agent-task-runtime.js";
 
 const scope = { workspaceId: "workspace-a", principalId: "tg-123", requestId: "route-100", task: "Read learnings" };
@@ -26,6 +27,12 @@ function setup() {
 }
 
 describe("Viktor agent durable reservation", () => {
+	it("stores the exact task fingerprint and refuses to attribute an old receipt to new text", async () => {
+		const { runtime } = setup();
+		expect(await runtime.reserve(scope)).toBe(true);
+		expect(await runtime.readTaskDigest(scope)).toBe(createHash("sha256").update(scope.task).digest("hex"));
+		expect(await runtime.readTaskDigest({ ...scope, principalId: "tg-456" })).toBeNull();
+	});
 	it("reserves owner identity atomically and cannot execute twice", async () => {
 		const { runtime, prisma, runner, createAccess, scoped } = setup();
 		expect(await runtime.reserve(scope)).toBe(true);
