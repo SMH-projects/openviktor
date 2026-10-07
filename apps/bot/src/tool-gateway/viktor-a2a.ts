@@ -119,7 +119,7 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		const match = OWNER.exec(ownerId);
 		const binding = deps.readBinding();
 		if (!match || !binding || binding.expiresAt <= Date.now()
-			|| binding.workspaceId !== deps.tenant || binding.principalId !== `tg-${match[1]}`) {
+			|| !IDENTIFIER.test(binding.workspaceId) || binding.principalId !== `tg-${match[1]}`) {
 			return Response.json({ error: "Forbidden" }, { status: 403 });
 		}
 		let payload: unknown;

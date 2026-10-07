@@ -8,7 +8,7 @@ import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./viktor-a2a
 const keys = generateKeyPairSync("ed25519");
 const audience = "https://viktor.example.test/a2a";
 const owner = "owner:tg:123";
-const binding = { workspaceId: "workspace-a", principalId: "tg-123", expiresAt: Date.now() + 300_000 };
+const binding = { workspaceId: "guest-workspace-37", principalId: "tg-123", expiresAt: Date.now() + 300_000 };
 
 function bearer(sub = owner, aud = audience, expiry = Math.floor(Date.now() / 1000) + 240) {
 	const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -90,7 +90,7 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 	});
 
 	it("returns terminal Task with artifact, and never executes duplicate messageId", async () => {
-		const { gateway, request, run } = setup();
+		const { gateway, request, run, reserve } = setup();
 		const first = await gateway.fetch(request());
 		expect(first.status).toBe(200);
 		const task = (await first.json() as { result: { id: string } }).result;
@@ -100,6 +100,8 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect((await gateway.fetch(request(bearer(), task.id, "tasks/get"))).status).toBe(200);
 		expect((await gateway.fetch(request())).status).toBe(200);
 		expect(run).toHaveBeenCalledTimes(1);
+		expect(reserve).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: "guest-workspace-37",
+			principalId: "tg-123" }));
 	});
 
 	it("rejects the same request ID with different text without replaying the model", async () => {
