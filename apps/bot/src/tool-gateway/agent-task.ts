@@ -25,7 +25,7 @@ export interface AgentTaskGatewayDeps {
 	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
 }
 
-const ALLOWED_TOOLS = ["read_learnings"];
+const ALLOWED_TOOLS = ["read_learnings", "list_skills", "read_skill"];
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
 export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (req: Request) => Promise<Response> } {

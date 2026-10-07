@@ -34,11 +34,13 @@ describe("owner-scoped Viktor agent task", () => {
 		expect(run).not.toHaveBeenCalled();
 	});
 
-	it("runs the full agent only with a fixed read-only capability set and returns an unverified receipt", async () => {
+	it("runs the full agent with read-only learnings and workspace skills, never write tools", async () => {
 		const { gateway, request, run } = setup();
 		const response = await gateway.fetch(request(payload));
 		expect(response.status).toBe(200);
-		expect(run).toHaveBeenCalledWith({ ...payload, allowedTools: ["read_learnings"] });
+		expect(run).toHaveBeenCalledWith({ ...payload,
+			allowedTools: ["read_learnings", "list_skills", "read_skill"] });
+		expect(run.mock.calls[0][0].allowedTools).not.toContain("write_skill");
 		expect(await response.json()).toEqual({ requestId: "route-100", agentRunId: "run-42",
 			responseText: "Two learnings", toolReceipt: [], ownerDelivery: "not_verified" });
 	});
