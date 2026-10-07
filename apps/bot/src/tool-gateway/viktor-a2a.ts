@@ -85,8 +85,12 @@ function result(scope: Omit<AgentTask, "task">, tenant: string, ownerId: string,
 	};
 }
 
-function rpc(id: string, task: ReturnType<typeof result>): Response {
+function rpc(id: string | number, task: ReturnType<typeof result>): Response {
 	return Response.json({ jsonrpc: "2.0", id, result: task });
+}
+
+function rpcError(id: string | number | null, code: number, message: string, status: number): Response {
+	return Response.json({ jsonrpc: "2.0", id, error: { code, message } }, { status });
 }
 
 export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) => Promise<Response> } {
@@ -116,10 +120,12 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 			return Response.json({ error: "Invalid RPC" }, { status: 400 });
 		}
 		const request = payload as Record<string, unknown>;
-		if (request.jsonrpc !== "2.0" || typeof request.id !== "string"
-			|| !IDENTIFIER.test(request.id) || !request.params || typeof request.params !== "object"
+		const id = request.id;
+		if (request.jsonrpc !== "2.0" || !((typeof id === "string" && id.length > 0 && id.length <= 128)
+			|| (typeof id === "number" && Number.isSafeInteger(id)))
+			|| !request.params || typeof request.params !== "object"
 			|| Array.isArray(request.params)) {
-			return Response.json({ error: "Invalid RPC" }, { status: 400 });
+			return rpcError(null, -32600, "Invalid RPC", 400);
 		}
 		const params = request.params as Record<string, unknown>;
 		let requestId: string;
@@ -127,13 +133,14 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		if (request.method === "message/send") {
 			const message = params.message;
 			if (!message || typeof message !== "object" || Array.isArray(message)) {
-				return Response.json({ error: "Invalid message" }, { status: 400 });
+				return rpcError(id, -32602, "Invalid message", 400);
 			}
 			const input = message as Record<string, unknown>;
 			const metadata = input.metadata as Record<string, unknown> | null;
 			const scope = metadata?.["tvin.owner_scope"];
 			const parts = input.parts;
-			if (input.kind !== "message" || input.role !== "user" || input.messageId !== request.id
+			if (input.kind !== "message" || input.role !== "user"
+				|| typeof input.messageId !== "string" || !IDENTIFIER.test(input.messageId)
 				|| !Array.isArray(parts) || parts.length !== 1 || !parts[0]
 				|| typeof parts[0] !== "object" || parts[0].kind !== "text"
 				|| typeof parts[0].text !== "string" || !parts[0].text.trim()
@@ -142,18 +149,18 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 				|| !scope || typeof scope !== "object" || Array.isArray(scope)
 				|| (scope as Record<string, unknown>).ownerId !== ownerId
 				|| (scope as Record<string, unknown>).tenant !== deps.tenant) {
-				return Response.json({ error: "Forbidden" }, { status: 403 });
+				return rpcError(id, -32003, "Owner scope forbidden", 403);
 			}
-			requestId = request.id;
+			requestId = input.messageId;
 			messageText = parts[0].text;
 		} else if (request.method === "tasks/get") {
 			if (typeof params.id !== "string" || !params.id.startsWith(`${context(deps.tenant, ownerId)}.`)) {
-				return Response.json({ error: "Forbidden" }, { status: 403 });
+				return rpcError(id, -32003, "Task owner forbidden", 403);
 			}
 			requestId = params.id.slice(context(deps.tenant, ownerId).length + 1);
-			if (!IDENTIFIER.test(requestId)) return Response.json({ error: "Invalid task id" }, { status: 400 });
+			if (!IDENTIFIER.test(requestId)) return rpcError(id, -32602, "Invalid task id", 400);
 		} else {
-			return Response.json({ error: "Unsupported method" }, { status: 400 });
+			return rpcError(id, -32601, "Unsupported method", 400);
 		}
 		const scoped = { workspaceId: binding.workspaceId, principalId: binding.principalId, requestId };
 		if (messageText !== null) {
@@ -161,31 +168,30 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 				if (await deps.reserve({ ...scoped, task: messageText })) {
 					try {
 						const receipt = await deps.run({ ...scoped, task: messageText, allowedTools: [...READ_TOOLS] });
-						return rpc(request.id, result(scoped, deps.tenant, ownerId, "completed", receipt));
+						return rpc(id, result(scoped, deps.tenant, ownerId, "completed", receipt));
 					} catch {
-						return rpc(request.id, result(scoped, deps.tenant, ownerId, "working", null));
+						return rpc(id, result(scoped, deps.tenant, ownerId, "working", null));
 					}
 					}
 				const savedDigest = await deps.readTaskDigest(scoped);
 				if (!savedDigest || savedDigest !== createHash("sha256").update(messageText).digest("hex")) {
-					return Response.json({ error: "Request identity conflict" }, { status: 409 });
+					return rpcError(id, -32009, "Request identity conflict", 409);
 				}
 			} catch {
-				return Response.json({ error: "Reservation unavailable" }, { status: 503 });
+				return rpcError(id, -32000, "Reservation unavailable", 503);
 			}
 		}
 		try {
 			if (!await deps.readTaskDigest(scoped)) {
-				return Response.json({ error: "Unknown A2A task" }, { status: 404 });
+				return rpcError(id, -32004, "Unknown A2A task", 404);
 			}
 			const receipt = await deps.readReceipt(scoped);
-			if (receipt) return rpc(request.id, result(scoped, deps.tenant, ownerId, "completed", receipt));
+			if (receipt) return rpc(id, result(scoped, deps.tenant, ownerId, "completed", receipt));
 			const reservation = await deps.readReservation?.(scoped);
-			if (!reservation) return Response.json({ error: "Unknown task" }, { status: 404 });
-			return rpc(request.id, result(scoped, deps.tenant, ownerId,
-				reservation === "unknown" ? "failed" : "working", null));
+			if (!reservation) return rpcError(id, -32004, "Unknown task", 404);
+			return rpc(id, result(scoped, deps.tenant, ownerId, "working", null));
 		} catch {
-			return Response.json({ error: "Task unavailable" }, { status: 503 });
+			return rpcError(id, -32000, "Task unavailable", 503);
 		}
 	} };
 }
