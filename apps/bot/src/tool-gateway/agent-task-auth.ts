@@ -5,8 +5,7 @@ import type { AgentGrant } from "./agent-task.js";
 
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
-export function readAgentGrantFile(path: string): (token: string) => AgentGrant | null {
-	if (!isAbsolute(path)) throw new Error("Grant file must be an absolute path");
+function loadGrant(path: string): { secret: Buffer; binding: AgentGrant } {
 	const stat = lstatSync(path);
 	if (!stat.isFile() || (stat.uid !== 0 && stat.uid !== process.getuid?.())
 		|| (stat.mode & 0o177) !== 0 || stat.size > 4096) {
@@ -27,8 +26,21 @@ export function readAgentGrantFile(path: string): (token: string) => AgentGrant 
 	const secret = Buffer.from(grant.token);
 	const binding = { workspaceId: grant.workspaceId, principalId: grant.principalId,
 		expiresAt: grant.expiresAt } as AgentGrant;
+	return { secret, binding };
+}
+
+export function readAgentGrantFile(path: string): (token: string) => AgentGrant | null {
+	if (!isAbsolute(path)) throw new Error("Grant file must be an absolute path");
+	loadGrant(path);
 	return (token: string): AgentGrant | null => {
+		let grant;
+		try {
+			grant = loadGrant(path);
+		} catch {
+			return null;
+		}
 		const candidate = Buffer.from(token);
-		return candidate.length === secret.length && timingSafeEqual(candidate, secret) ? binding : null;
+		return candidate.length === grant.secret.length && timingSafeEqual(candidate, grant.secret)
+			? grant.binding : null;
 	};
 }

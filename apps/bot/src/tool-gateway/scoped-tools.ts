@@ -5,9 +5,10 @@ import type { ToolConfig } from "../agent/runner.js";
 import { registerWorkspaceToken, revokeWorkspaceToken } from "./server.js";
 
 export function createScopedToolAccess(workspaceId: string, port: number, timeoutMs: number,
-	tools: LLMToolDefinition[]): { token: string; config: ToolConfig; dispose: () => void } {
+	tools: LLMToolDefinition[], allowedRoles: readonly string[] = tools.map((tool) => tool.name)):
+	{ token: string; config: ToolConfig; dispose: () => void } {
 	const token = randomBytes(32).toString("hex");
-	registerWorkspaceToken(token, workspaceId);
+	registerWorkspaceToken(token, workspaceId, allowedRoles, Date.now() + 1_200_000);
 	return { token,
 		config: { client: new ToolGatewayClient({ baseUrl: `http://localhost:${port}`,
 			token, timeoutMs }), tools },

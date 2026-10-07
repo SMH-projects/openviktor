@@ -6,6 +6,7 @@ import type { AgentReceipt, AgentTask } from "./agent-task.js";
 
 const CHANNEL = "__twin_owner__";
 const READ_TOOLS = ["read_learnings"];
+const UNCERTAIN_AFTER_MS = 20 * 60 * 1000;
 
 function threadKey(scope: Omit<AgentTask, "task">): string {
 	return createHash("sha256").update(`${scope.principalId}:${scope.requestId}`).digest("hex");
@@ -44,6 +45,11 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 	}
 
 	return {
+		readReservation: async (scope: Omit<AgentTask, "task">): Promise<"pending" | "unknown" | null> => {
+			const thread = await reserved(scope);
+			if (!thread) return null;
+			return Date.now() - thread.createdAt.getTime() >= UNCERTAIN_AFTER_MS ? "unknown" : "pending";
+		},
 		reserve: async (scope: AgentTask): Promise<boolean> => {
 			try {
 				await prisma.thread.create({ data: {

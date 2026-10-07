@@ -223,7 +223,7 @@ async function main(): Promise<void> {
 				lookupGrant: readAgentGrantFile(process.env.VIKTOR_TWIN_GRANT_FILE),
 				...createAgentTaskRuntime(prisma, runner, (workspaceId) =>
 					createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
-						registry.getDefinitions())),
+						registry.getDefinitions(), ["read_learnings"])),
 			})
 		: null;
 

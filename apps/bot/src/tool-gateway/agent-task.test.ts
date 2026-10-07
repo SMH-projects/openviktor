@@ -61,4 +61,33 @@ describe("owner-scoped Viktor agent task", () => {
 		expect(await receipt.json()).toMatchObject({ requestId: "route-100", ownerDelivery: "not_verified" });
 		expect(run).toHaveBeenCalledTimes(1);
 	});
+	it("reports a reserved request without a receipt instead of losing it as unknown", async () => {
+		const gateway = createAgentTaskGateway({
+			lookupGrant: () => grant,
+			reserve: async () => false,
+			run: vi.fn(),
+			readReceipt: async () => null,
+			readReservation: async () => "unknown",
+		});
+		const response = await gateway.fetch(new Request(
+			"http://localhost/v1/agent/run?requestId=route-100&workspaceId=workspace-a&principalId=tg-123",
+			{ headers: { authorization: "Bearer scoped-secret" } },
+		));
+		expect(response.status).toBe(409);
+		expect(await response.json()).toMatchObject({ requestId: "route-100", state: "unknown_outcome" });
+	});
+	it("reports a recent reservation as pending without running twice", async () => {
+		const run = vi.fn();
+		const gateway = createAgentTaskGateway({
+			lookupGrant: () => grant, reserve: async () => false, run,
+			readReceipt: async () => null, readReservation: async () => "pending",
+		});
+		const response = await gateway.fetch(new Request(
+			"http://localhost/v1/agent/run?requestId=route-100&workspaceId=workspace-a&principalId=tg-123",
+			{ headers: { authorization: "Bearer scoped-secret" } },
+		));
+		expect(response.status).toBe(202);
+		expect(await response.json()).toMatchObject({ requestId: "route-100", state: "pending" });
+		expect(run).not.toHaveBeenCalled();
+	});
 });

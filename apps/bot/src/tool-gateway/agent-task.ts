@@ -22,6 +22,7 @@ export interface AgentTaskGatewayDeps {
 	reserve: (scope: AgentTask) => Promise<boolean>;
 	run: (task: AgentTask & { allowedTools: string[] }) => Promise<AgentReceipt>;
 	readReceipt: (scope: Omit<AgentTask, "task">) => Promise<AgentReceipt | null>;
+	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
 }
 
 const ALLOWED_TOOLS = ["read_learnings"];
@@ -51,9 +52,15 @@ export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (re
 					|| url.searchParams.get("principalId") !== grant.principalId) {
 					return Response.json({ error: "Forbidden" }, { status: 403 });
 				}
-				const receipt = await deps.readReceipt({ workspaceId: grant.workspaceId,
-					principalId: grant.principalId, requestId });
-				if (!receipt) return Response.json({ error: "Pending or unknown" }, { status: 404 });
+				const scope = { workspaceId: grant.workspaceId, principalId: grant.principalId, requestId };
+				const receipt = await deps.readReceipt(scope);
+				if (!receipt) {
+					const state = await deps.readReservation?.(scope);
+					if (state === "pending") return Response.json({ requestId, state }, { status: 202 });
+					if (state === "unknown") return Response.json({ requestId, state: "unknown_outcome",
+						resolution: "Manual owner reconciliation required before submitting a new requestId" }, { status: 409 });
+					return Response.json({ error: "Unknown request" }, { status: 404 });
+				}
 				return Response.json({ requestId, ...receipt, ownerDelivery: "not_verified" });
 			}
 			let body: unknown;
