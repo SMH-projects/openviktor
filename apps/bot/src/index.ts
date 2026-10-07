@@ -39,6 +39,12 @@ import type { RegistryConfig, ToolBackend } from "@openviktor/tools";
 import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
+import { readAgentGrantFile } from "./tool-gateway/agent-task-auth.js";
+import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
+import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
+import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
+import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
+import { createBenchHandler } from "./bench/handler.js";
 import {
 	CronScheduler,
 	createCronJobDefinition,
@@ -82,7 +88,7 @@ import { fetchActiveThreads } from "./thread/index.js";
 import { ThreadLock } from "./thread/lock.js";
 import { StaleThreadDetector } from "./thread/stale.js";
 import { createDashboardApi } from "./tool-gateway/dashboard-api.js";
-import { createToolGateway, registerWorkspaceToken } from "./tool-gateway/server.js";
+import { createToolGateway } from "./tool-gateway/server.js";
 import { UsageLimiter } from "./usage/limiter.js";
 import { UsageTracker } from "./usage/tracker.js";
 
@@ -147,6 +153,7 @@ function createEventDeduplicator(ttlMs = 300_000) {
 
 async function main(): Promise<void> {
 	const config = loadConfig();
+	assertOwnerAgentBackend(config.TOOL_BACKEND, process.env.VIKTOR_TWIN_GRANT_FILE);
 	const mode = config.DEPLOYMENT_MODE;
 
 	await prisma.$connect();
@@ -168,7 +175,6 @@ async function main(): Promise<void> {
 		token: "local",
 		timeoutMs: config.TOOL_TIMEOUT_MS,
 	});
-	registerWorkspaceToken("local", "default");
 
 	const concurrencyLimiter = await createConcurrencyLimiter(
 		config.MAX_CONCURRENT_RUNS,
@@ -210,7 +216,18 @@ async function main(): Promise<void> {
 			threadLock,
 			maxConcurrentRuns: config.MAX_CONCURRENT_RUNS,
 		},
+		undefined,
+		(workspaceId) => createScopedToolAccess(workspaceId, gatewayPort,
+			config.TOOL_TIMEOUT_MS, registry.getDefinitions()),
 	);
+	const agentTasks = process.env.VIKTOR_TWIN_GRANT_FILE
+		? createAgentTaskGateway({
+				lookupGrant: readAgentGrantFile(process.env.VIKTOR_TWIN_GRANT_FILE),
+				...createAgentTaskRuntime(prisma, runner, (workspaceId) =>
+					createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
+						registry.getDefinitions(), ["read_learnings"])),
+			})
+		: null;
 
 	// Thread orchestration tools
 	registerThreadOrchestrationTools(registry, {
@@ -468,7 +485,6 @@ async function main(): Promise<void> {
 		const botUserId = connection.botUserId;
 
 		// Register workspace token for tool gateway
-		registerWorkspaceToken("local", workspaceId);
 
 		if (event.type === "message") {
 			const isDm = event.channelType === "im";
@@ -776,7 +792,6 @@ async function main(): Promise<void> {
 			});
 
 			const prompt = buildProactiveOnboardingPrompt(installerSlackUserId);
-			registerWorkspaceToken("local", workspaceId);
 
 			const result = await runner.run({
 				workspaceId,
@@ -824,10 +839,20 @@ async function main(): Promise<void> {
 		"Access-Control-Allow-Headers": "Content-Type, Authorization, X-Workspace-Id",
 	};
 
+	let benchHandler: ReturnType<typeof createBenchHandler> | undefined;
 	const gatewayServer = Bun.serve({
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
+			if (url.pathname === "/v1/agent/run") {
+				return agentTasks ? agentTasks.fetch(req) : Response.json({ error: "Not found" }, { status: 404 });
+			}
+
+			if (url.pathname === "/bench/message") {
+				return benchHandler
+					? benchHandler(req)
+					: Response.json({ error: "not_found" }, { status: 404 });
+			}
 
 			if (req.method === "OPTIONS") {
 				return new Response(null, { status: 204, headers: corsHeaders });
@@ -891,7 +916,30 @@ async function main(): Promise<void> {
 			botToken,
 			botUserId,
 		);
-		registerWorkspaceToken("local", workspace.id);
+
+		if (process.env.BENCH_TOKEN) {
+			benchHandler = createBenchHandler({
+				token: process.env.BENCH_TOKEN,
+				workspaceId: workspace.id,
+				workspaceName: workspace.slackTeamName,
+				runner,
+				getContext: async () => {
+					const [skillCatalog, integrationCatalog, activeThreads] = await Promise.all([
+						fetchSkillCatalog(workspace.id),
+						fetchIntegrationCatalog(workspace.id),
+						fetchActiveThreads(prisma, workspace.id),
+					]);
+					return { skillCatalog, integrationCatalog, activeThreads };
+				},
+				getToolCalls: (agentRunId) =>
+					prisma.toolCall.findMany({
+						where: { agentRunId },
+						select: { toolName: true, status: true, durationMs: true, output: true },
+						orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+					}),
+				getAvailableTools: () => registry.getDefinitions().map((tool) => tool.name),
+			});
+		}
 
 		// Register existing Bolt app in ConnectionManager for health checks and dashboard API
 		// (don't create a second SocketModeConnection)
