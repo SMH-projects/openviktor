@@ -37,10 +37,10 @@ describe("Viktor agent durable reservation", () => {
 		const { runtime, prisma, runner, createAccess, scoped } = setup();
 		expect(await runtime.reserve(scope)).toBe(true);
 		expect(await runtime.reserve(scope)).toBe(false);
-		await runtime.run({ ...scope, allowedTools: ["read_learnings"] });
+		await runtime.run({ ...scope, allowedTools: ["read_learnings", "list_skills", "read_skill"] });
 		expect(prisma.thread.create).toHaveBeenCalledTimes(2);
 		expect(runner.run).toHaveBeenCalledWith(expect.objectContaining({
-			workspaceId: scope.workspaceId, allowedTools: ["read_learnings"],
+			workspaceId: scope.workspaceId, allowedTools: ["read_learnings", "list_skills", "read_skill"],
 			slackChannel: "__twin_owner__", userMessage: scope.task,
 		}), undefined, scoped.config);
 		expect(createAccess).toHaveBeenCalledWith("workspace-a");
