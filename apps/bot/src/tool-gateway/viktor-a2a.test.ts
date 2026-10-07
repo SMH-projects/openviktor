@@ -43,6 +43,15 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 }
 
 describe("Viktor owner-scoped A2A endpoint", () => {
+	it("serves a public v0.3 AgentCard advertising scoped bearer JWT and the exact URL", async () => {
+		const { gateway } = setup();
+		const cardResponse = await gateway.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"));
+		expect(cardResponse.status).toBe(200);
+		expect(await cardResponse.json()).toMatchObject({ protocolVersion: "0.3.0", name: "Viktor",
+			url: audience, preferredTransport: "JSONRPC",
+			securitySchemes: { ownerJwt: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
+			security: [{ ownerJwt: [] }], skills: [{ id: "viktor.read_workspace_learnings" }] });
+	});
 	it("rejects verifier key symlinks and writable public keys", () => {
 		const directory = mkdtempSync(join(tmpdir(), "viktor-a2a-"));
 		try {

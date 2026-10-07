@@ -860,7 +860,8 @@ async function main(): Promise<void> {
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
-			if (a2aAudience && url.pathname === new URL(a2aAudience).pathname) {
+			if (a2aAudience && (url.pathname === new URL(a2aAudience).pathname
+				|| url.pathname === "/.well-known/agent-card.json")) {
 				return a2aTasks ? a2aTasks.fetch(req) : Response.json({ error: "Not found" }, { status: 404 });
 			}
 			if (url.pathname === "/v1/agent/run") {

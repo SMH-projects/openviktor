@@ -99,6 +99,18 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		throw new Error("Viktor A2A configuration invalid");
 	}
 	return { fetch: async (req: Request): Promise<Response> => {
+		if (req.method === "GET" && new URL(req.url).pathname === "/.well-known/agent-card.json") {
+			return Response.json({
+				protocolVersion: "0.3.0", name: "Viktor", url: deps.audience,
+				description: "Owner-scoped read-only workspace learnings",
+				version: "1.0.0", preferredTransport: "JSONRPC",
+				capabilities: {}, defaultInputModes: ["text/plain"], defaultOutputModes: ["text/plain"],
+				securitySchemes: { ownerJwt: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
+				security: [{ ownerJwt: [] }],
+				skills: [{ id: "viktor.read_workspace_learnings", name: "Read workspace learnings",
+					description: "Answer a read-only owner task using workspace learnings", tags: ["learnings"] }],
+			});
+		}
 		if (req.method !== "POST" || new URL(req.url).pathname !== new URL(deps.audience).pathname) {
 			return Response.json({ error: "Not found" }, { status: 404 });
 		}
