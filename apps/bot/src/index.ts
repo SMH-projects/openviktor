@@ -39,6 +39,10 @@ import type { RegistryConfig, ToolBackend } from "@openviktor/tools";
 import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
+import { readAgentGrantFile } from "./tool-gateway/agent-task-auth.js";
+import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
+import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
+import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
 import { createBenchHandler } from "./bench/handler.js";
 import {
 	CronScheduler,
@@ -83,7 +87,7 @@ import { fetchActiveThreads } from "./thread/index.js";
 import { ThreadLock } from "./thread/lock.js";
 import { StaleThreadDetector } from "./thread/stale.js";
 import { createDashboardApi } from "./tool-gateway/dashboard-api.js";
-import { createToolGateway, registerWorkspaceToken } from "./tool-gateway/server.js";
+import { createToolGateway } from "./tool-gateway/server.js";
 import { UsageLimiter } from "./usage/limiter.js";
 import { UsageTracker } from "./usage/tracker.js";
 
@@ -169,7 +173,6 @@ async function main(): Promise<void> {
 		token: "local",
 		timeoutMs: config.TOOL_TIMEOUT_MS,
 	});
-	registerWorkspaceToken("local", "default");
 
 	const concurrencyLimiter = await createConcurrencyLimiter(
 		config.MAX_CONCURRENT_RUNS,
@@ -211,7 +214,18 @@ async function main(): Promise<void> {
 			threadLock,
 			maxConcurrentRuns: config.MAX_CONCURRENT_RUNS,
 		},
+		undefined,
+		(workspaceId) => createScopedToolAccess(workspaceId, gatewayPort,
+			config.TOOL_TIMEOUT_MS, registry.getDefinitions()),
 	);
+	const agentTasks = process.env.VIKTOR_TWIN_GRANT_FILE
+		? createAgentTaskGateway({
+				lookupGrant: readAgentGrantFile(process.env.VIKTOR_TWIN_GRANT_FILE),
+				...createAgentTaskRuntime(prisma, runner, (workspaceId) =>
+					createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
+						registry.getDefinitions())),
+			})
+		: null;
 
 	// Thread orchestration tools
 	registerThreadOrchestrationTools(registry, {
@@ -469,7 +483,6 @@ async function main(): Promise<void> {
 		const botUserId = connection.botUserId;
 
 		// Register workspace token for tool gateway
-		registerWorkspaceToken("local", workspaceId);
 
 		if (event.type === "message") {
 			const isDm = event.channelType === "im";
@@ -777,7 +790,6 @@ async function main(): Promise<void> {
 			});
 
 			const prompt = buildProactiveOnboardingPrompt(installerSlackUserId);
-			registerWorkspaceToken("local", workspaceId);
 
 			const result = await runner.run({
 				workspaceId,
@@ -830,6 +842,9 @@ async function main(): Promise<void> {
 		port: gatewayPort,
 		fetch: async (req: Request) => {
 			const url = new URL(req.url, "http://localhost");
+			if (url.pathname === "/v1/agent/run") {
+				return agentTasks ? agentTasks.fetch(req) : Response.json({ error: "Not found" }, { status: 404 });
+			}
 
 			if (url.pathname === "/bench/message") {
 				return benchHandler
@@ -899,7 +914,6 @@ async function main(): Promise<void> {
 			botToken,
 			botUserId,
 		);
-		registerWorkspaceToken("local", workspace.id);
 
 		if (process.env.BENCH_TOKEN) {
 			benchHandler = createBenchHandler({

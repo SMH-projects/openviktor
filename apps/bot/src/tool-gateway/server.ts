@@ -17,7 +17,14 @@ interface GatewayDeps {
 const TOKEN_WORKSPACE_MAP = new Map<string, string>();
 
 export function registerWorkspaceToken(token: string, workspaceId: string): void {
+	if (!/^[a-f0-9]{64}$/.test(token) || !workspaceId || TOKEN_WORKSPACE_MAP.has(token)) {
+		throw new Error("Invalid or previously registered gateway token");
+	}
 	TOKEN_WORKSPACE_MAP.set(token, workspaceId);
+}
+
+export function revokeWorkspaceToken(token: string): void {
+	TOKEN_WORKSPACE_MAP.delete(token);
 }
 
 export function resolveWorkspaceFromToken(token: string): string | null {
