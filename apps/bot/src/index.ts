@@ -40,6 +40,7 @@ import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
 import { readAgentGrantFile } from "./tool-gateway/agent-task-auth.js";
+import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
 import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
 import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
 import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
@@ -152,6 +153,7 @@ function createEventDeduplicator(ttlMs = 300_000) {
 
 async function main(): Promise<void> {
 	const config = loadConfig();
+	assertOwnerAgentBackend(config.TOOL_BACKEND, process.env.VIKTOR_TWIN_GRANT_FILE);
 	const mode = config.DEPLOYMENT_MODE;
 
 	await prisma.$connect();
