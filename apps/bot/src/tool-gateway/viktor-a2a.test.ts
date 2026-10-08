@@ -8,13 +8,13 @@ import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./viktor-a2a
 const keys = generateKeyPairSync("ed25519");
 const audience = "https://viktor.example.test/a2a";
 const owner = "owner:tg:123";
-const binding = { workspaceId: "guest-workspace-37", principalId: "tg-123", expiresAt: Date.now() + 300_000 };
+const binding = { workspaceId: "guest-workspace-37", principalId: "tg-123" };
 
 function bearer(sub = owner, aud = audience, expiry = Math.floor(Date.now() / 1000) + 240) {
 	const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
 	const now = Math.floor(Date.now() / 1000);
 	const signed = `${encode({ alg: "EdDSA", typ: "JWT" })}.${encode({ iss: "twin", sub, aud,
-		iat: now, exp: expiry, jti: "one-time-id" })}`;
+		 iat: now, exp: expiry, jti: "one-time-id", scope: "twin:agent" })}`;
 	return `${signed}.${sign(null, Buffer.from(signed), keys.privateKey).toString("base64url")}`;
 }
 
