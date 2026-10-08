@@ -47,10 +47,24 @@ export function readAgentGrantFile(path: string): (token: string) => AgentGrant 
 
 export function readOwnerAgentBindingFile(path: string): () => AgentGrant | null {
 	if (!isAbsolute(path)) throw new Error("Grant file must be an absolute path");
-	loadGrant(path);
-	return (): AgentGrant | null => {
+	const loadBinding = (): Pick<AgentGrant, "workspaceId" | "principalId"> => {
+		const stat = lstatSync(path);
+		if (!stat.isFile() || (stat.uid !== 0 && stat.uid !== process.getuid?.())
+			|| (stat.mode & 0o177) !== 0 || stat.size > 4096) throw new Error("Binding permissions invalid");
+		const raw: unknown = JSON.parse(readFileSync(path, "utf8"));
+		if (!raw || typeof raw !== "object" || Array.isArray(raw)
+			|| Object.keys(raw).sort().join(",") !== "principalId,workspaceId") throw new Error("Binding shape invalid");
+		const binding = raw as Record<string, unknown>;
+		if (typeof binding.workspaceId !== "string" || !IDENTIFIER.test(binding.workspaceId)
+			|| typeof binding.principalId !== "string" || !IDENTIFIER.test(binding.principalId)) {
+			throw new Error("Binding identity invalid");
+		}
+		return { workspaceId: binding.workspaceId, principalId: binding.principalId };
+	};
+	loadBinding();
+	return (): Pick<AgentGrant, "workspaceId" | "principalId"> | null => {
 		try {
-			return loadGrant(path).binding;
+			return loadBinding();
 		} catch {
 			return null;
 		}

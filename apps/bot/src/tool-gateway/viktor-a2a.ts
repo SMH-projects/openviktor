@@ -23,7 +23,7 @@ interface A2ADeps extends Omit<AgentTaskGatewayDeps, "lookupGrant"> {
 	publicKey: KeyObject;
 	audience: string;
 	tenant: string;
-	readBinding: () => AgentGrant | null;
+	readBinding: () => Pick<AgentGrant, "workspaceId" | "principalId"> | null;
 	readTaskDigest: (scope: Omit<AgentTask, "task">) => Promise<string | null>;
 }
 
@@ -47,8 +47,9 @@ function verifiedOwner(auth: string | null, deps: A2ADeps): string | null {
 	const payload = decodeJson(claims);
 	if (!parsedHeader || Object.keys(parsedHeader).sort().join(",") !== "alg,typ"
 		|| parsedHeader.alg !== "EdDSA" || parsedHeader.typ !== "JWT" || !payload
-		|| Object.keys(payload).sort().join(",") !== "aud,exp,iat,iss,jti,sub"
+		|| Object.keys(payload).sort().join(",") !== "aud,exp,iat,iss,jti,scope,sub"
 		|| payload.iss !== "twin" || payload.aud !== deps.audience
+		|| payload.scope !== "twin:agent"
 		|| typeof payload.sub !== "string" || !OWNER.test(payload.sub)
 		|| typeof payload.jti !== "string" || payload.jti.length < 8 || payload.jti.length > 256
 		|| typeof payload.iat !== "number" || !Number.isSafeInteger(payload.iat)
@@ -118,7 +119,7 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		if (!ownerId) return Response.json({ error: "Unauthorized" }, { status: 401 });
 		const match = OWNER.exec(ownerId);
 		const binding = deps.readBinding();
-		if (!match || !binding || binding.expiresAt <= Date.now()
+		if (!match || !binding
 			|| !IDENTIFIER.test(binding.workspaceId) || binding.principalId !== `tg-${match[1]}`) {
 			return Response.json({ error: "Forbidden" }, { status: 403 });
 		}
