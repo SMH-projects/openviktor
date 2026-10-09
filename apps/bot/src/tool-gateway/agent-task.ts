@@ -22,6 +22,7 @@ export interface AgentTaskGatewayDeps {
 	reserve: (scope: AgentTask) => Promise<boolean>;
 	run: (task: AgentTask & { allowedTools: string[] }) => Promise<AgentReceipt>;
 	readReceipt: (scope: Omit<AgentTask, "task">) => Promise<AgentReceipt | null>;
+	readFailure?: (scope: Omit<AgentTask, "task">) => Promise<string | null>;
 	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
 }
 

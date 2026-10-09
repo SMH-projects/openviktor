@@ -1,6 +1,7 @@
 import { createHash, createPublicKey, verify, type KeyObject } from "node:crypto";
 import { lstatSync, readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
+import { LLMError } from "@openviktor/shared";
 import type { AgentGrant, AgentReceipt, AgentTask, AgentTaskGatewayDeps } from "./agent-task.js";
 
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
@@ -75,11 +76,16 @@ function taskId(contextId: string, requestId: string): string {
 }
 
 function result(scope: Omit<AgentTask, "task">, tenant: string, ownerId: string,
-	state: "working" | "completed" | "failed", receipt: AgentReceipt | null) {
+	state: "working" | "completed" | "failed", receipt: AgentReceipt | null,
+	failureReason?: string) {
 	const contextId = context(tenant, ownerId);
 	return {
 		kind: "task", id: taskId(contextId, scope.requestId), contextId,
-		status: { state }, metadata: { "tvin.owner_scope": { tenant, ownerId } },
+		status: { state, ...(state === "failed" && failureReason
+			? { message: { kind: "message", role: "agent",
+				messageId: `${scope.requestId}-failure`,
+				parts: [{ kind: "text", text: failureReason }] } } : {}) },
+		metadata: { "tvin.owner_scope": { tenant, ownerId } },
 		...(state === "completed" && receipt?.responseText.trim()
 			? { artifacts: [{ artifactId: receipt.agentRunId,
 				parts: [{ kind: "text", text: receipt.responseText }] }] } : {}),
@@ -183,11 +189,16 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 					let timeout: ReturnType<typeof setTimeout> | undefined;
 					try {
 						const running = Promise.resolve().then(() => deps.run({ ...scoped,
-							task: messageText, allowedTools: [...READ_TOOLS] })).catch(() => null);
+							task: messageText, allowedTools: [...READ_TOOLS] })).then(
+							(receipt) => ({ receipt, failureReason: undefined }),
+							(error: unknown) => ({ receipt: null,
+								failureReason: error instanceof LLMError ? error.message : undefined }),
+						);
 						const receipt = await Promise.race([running,
 							new Promise<null>((resolve) => { timeout = setTimeout(() => resolve(null), 1000); })]);
 						return rpc(id, result(scoped, deps.tenant, ownerId,
-							receipt ? "completed" : "working", receipt));
+							receipt?.failureReason ? "failed" : receipt?.receipt ? "completed" : "working",
+							receipt?.receipt ?? null, receipt?.failureReason));
 					} finally {
 						if (timeout) clearTimeout(timeout);
 					}
@@ -206,6 +217,10 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 			}
 			const receipt = await deps.readReceipt(scoped);
 			if (receipt) return rpc(id, result(scoped, deps.tenant, ownerId, "completed", receipt));
+			const failureReason = await deps.readFailure?.(scoped);
+			if (failureReason) {
+				return rpc(id, result(scoped, deps.tenant, ownerId, "failed", null, failureReason));
+			}
 			const reservation = await deps.readReservation?.(scoped);
 			if (!reservation) return rpcError(id, -32004, "Unknown task", 404);
 			return rpc(id, result(scoped, deps.tenant, ownerId, "working", null));

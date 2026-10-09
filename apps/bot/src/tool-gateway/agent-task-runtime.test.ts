@@ -16,8 +16,11 @@ function setup() {
 				slackThreadTs: string } } }) => threads.get(where.workspaceId_slackChannel_slackThreadTs.slackThreadTs) ?? null),
 		},
 		workspace: { findUnique: vi.fn().mockResolvedValue({ slackTeamName: "Owner workspace", isActive: true }) },
-		agentRun: { findFirst: vi.fn().mockResolvedValue({ id: "run-42", messages: [{ content: "Done" }],
-			toolCalls: [{ toolName: "read_learnings", status: "COMPLETED" }] }) },
+		agentRun: { findFirst: vi.fn(async ({ where }: { where: { status: string } }) =>
+			where.status === "FAILED"
+				? { errorMessage: "Provider rejected model: quota exceeded" }
+				: { id: "run-42", messages: [{ content: "Done" }],
+					toolCalls: [{ toolName: "read_learnings", status: "COMPLETED" }] }) },
 	};
 	const runner = { run: vi.fn().mockResolvedValue({ agentRunId: "run-42", responseText: "Done" }) };
 	const scoped = { token: "unique", config: { client: { call: vi.fn() }, tools: [] }, dispose: vi.fn() };
@@ -65,5 +68,10 @@ describe("Viktor agent durable reservation", () => {
 		expect(await runtime.readReservation(scope)).toBe("unknown");
 		expect(await runtime.reserve(scope)).toBe(false);
 		expect(runner.run).not.toHaveBeenCalled();
+	});
+	it("reads the durable failure reason for a reserved task", async () => {
+		const { runtime } = setup();
+		await runtime.reserve(scope);
+		expect(await runtime.readFailure(scope)).toBe("Provider rejected model: quota exceeded");
 	});
 });

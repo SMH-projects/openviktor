@@ -2,6 +2,7 @@ import { createHash, generateKeyPairSync, sign } from "node:crypto";
 import { chmodSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { LLMError } from "@openviktor/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./viktor-a2a.js";
 
@@ -27,10 +28,12 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 	});
 	const run = vi.fn().mockResolvedValue({ agentRunId: "run-1", responseText: "Learnings", toolReceipt: [] });
 	const readReceipt = vi.fn().mockResolvedValue(null);
-	const gateway = createViktorA2AGateway({ publicKey: keys.publicKey, audience,
+	const readFailure = vi.fn().mockResolvedValue(null);
+	const deps = { publicKey: keys.publicKey, audience,
 		tenant: "workspace-a", readBinding: () => binding, reserve, run, readReceipt,
 		readTaskDigest: async () => savedDigest,
-		readReservation: async () => reservationState });
+		readReservation: async () => reservationState, readFailure };
+	const gateway = createViktorA2AGateway(deps);
 	const request = (token = bearer(), text = "Summarize learnings", method = "message/send", id: string | number = "req-1", messageId = "req-1") =>
 		new Request(audience, { method: "POST", headers: { authorization: `Bearer ${token}` },
 			body: JSON.stringify({ jsonrpc: "2.0", id, method, params: method === "tasks/get"
@@ -39,7 +42,7 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 					parts: [{ kind: "text", text }], metadata: {
 						"tvin.owner_scope": { tenant: "workspace-a", ownerId: owner },
 					} } } }) });
-	return { gateway, request, run, reserve, readReceipt };
+	return { gateway, request, run, reserve, readReceipt, readFailure };
 }
 
 describe("Viktor owner-scoped A2A endpoint", () => {
@@ -169,6 +172,45 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		const taskId = (await first).result.id;
 		const response = await gateway.fetch(request(bearer(), taskId, "tasks/get"));
 		expect((await response.json() as { result: { status: { state: string } } }).result.status.state).toBe("working");
+	});
+
+	it("returns a failed Task with the provider reason when the agent run rejects", async () => {
+		const { gateway, request, run } = setup();
+		run.mockRejectedValueOnce(new LLMError("Provider rejected model: quota exceeded"));
+		const response = await gateway.fetch(request());
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({
+			result: {
+				status: {
+					state: "failed",
+					message: {
+						kind: "message",
+						role: "agent",
+						parts: [{ kind: "text", text: "Provider rejected model: quota exceeded" }],
+					},
+				},
+			},
+		});
+	});
+
+	it("returns a durable failed Task when polling a provider-rejected run", async () => {
+		vi.useFakeTimers();
+		try {
+			const { gateway, request, run, readFailure } = setup();
+			run.mockImplementationOnce(() => new Promise(() => undefined));
+			const pending = gateway.fetch(request());
+			await vi.advanceTimersByTimeAsync(1500);
+			const working = await pending;
+			const task = (await working.json() as { result: { id: string } }).result;
+			readFailure.mockResolvedValue("Provider rejected model: quota exceeded");
+			const polled = await gateway.fetch(request(bearer(), task.id, "tasks/get"));
+			expect(await polled.json()).toMatchObject({ result: { status: {
+				state: "failed",
+				message: { parts: [{ kind: "text", text: "Provider rejected model: quota exceeded" }] },
+			} } });
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	it("keeps a task pending after unknown outcome instead of re-running", async () => {

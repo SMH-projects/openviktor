@@ -43,6 +43,16 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 				name: call.toolName, outcome: call.status,
 			})) };
 	}
+	async function readFailure(scope: Omit<AgentTask, "task">): Promise<string | null> {
+		const thread = await reserved(scope);
+		if (!thread) return null;
+		const result = await prisma.agentRun.findFirst({
+			where: { workspaceId: scope.workspaceId, threadId: thread.id, status: "FAILED" },
+			orderBy: { createdAt: "desc" },
+			select: { errorMessage: true },
+		});
+		return result ? result.errorMessage?.trim() || "Agent execution failed" : null;
+	}
 
 	return {
 		readTaskDigest: async (scope: Omit<AgentTask, "task">): Promise<string | null> => {
@@ -93,5 +103,6 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 			return receipt;
 		},
 		readReceipt,
+		readFailure,
 	};
 }
