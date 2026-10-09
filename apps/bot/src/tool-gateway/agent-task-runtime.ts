@@ -84,7 +84,7 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 			const workspace = await prisma.workspace.findUnique({ where: { id: scope.workspaceId } });
 			if (!workspace?.isActive) throw new Error("Workspace unavailable");
 			const access = createAccess(scope.workspaceId);
-			let result;
+			let result: Awaited<ReturnType<AgentRunner["run"]>>;
 			try {
 				result = await runner.run({
 					workspaceId: scope.workspaceId, memberId: null, triggerType: "MANUAL",

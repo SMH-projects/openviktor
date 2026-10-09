@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
+import { describe, expect, it, vi } from "vitest";
 import { createAgentTaskRuntime } from "./agent-task-runtime.js";
 
 const scope = { workspaceId: "workspace-a", principalId: "tg-123", requestId: "route-100", task: "Read learnings" };

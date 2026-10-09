@@ -139,7 +139,7 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 			finish({ agentRunId: "run-1", responseText: "Learnings", toolReceipt: [] });
 			readReceipt.mockResolvedValue({ agentRunId: "run-1", responseText: "Learnings", toolReceipt: [] });
 			const completed = await gateway.fetch(request(bearer(),
-				createHash("sha256").update(`workspace-a\0${owner}`).digest("hex") + ".req-1", "tasks/get"));
+				`${createHash("sha256").update(`workspace-a\0${owner}`).digest("hex")}.req-1`, "tasks/get"));
 			expect((await completed.json() as { result: { status: { state: string } } }).result.status.state).toBe("completed");
 		} finally {
 			vi.useRealTimers();
