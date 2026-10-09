@@ -117,6 +117,12 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect(reserve).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: "guest-workspace-37",
 			principalId: "tg-123" }));
 	});
+	it("accepts the V5 UTF-8 question while rejecting oversized tasks", async () => {
+		const { gateway, request, reserve } = setup();
+		expect((await gateway.fetch(request(bearer(), "Д".repeat(1200)))).status).toBe(200);
+		expect((await gateway.fetch(request(bearer(), "Д".repeat(4100)))).status).toBe(403);
+		expect(reserve).toHaveBeenCalledTimes(1);
+	});
 
 	it("rejects the same request ID with different text without replaying the model", async () => {
 		const { gateway, request, run } = setup();
