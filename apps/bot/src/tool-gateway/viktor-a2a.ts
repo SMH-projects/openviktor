@@ -180,13 +180,18 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		if (messageText !== null) {
 			try {
 				if (await deps.reserve({ ...scoped, task: messageText })) {
+					let timeout: ReturnType<typeof setTimeout> | undefined;
 					try {
-						const receipt = await deps.run({ ...scoped, task: messageText, allowedTools: [...READ_TOOLS] });
-						return rpc(id, result(scoped, deps.tenant, ownerId, "completed", receipt));
-					} catch {
-						return rpc(id, result(scoped, deps.tenant, ownerId, "working", null));
+						const running = Promise.resolve().then(() => deps.run({ ...scoped,
+							task: messageText, allowedTools: [...READ_TOOLS] })).catch(() => null);
+						const receipt = await Promise.race([running,
+							new Promise<null>((resolve) => { timeout = setTimeout(() => resolve(null), 1000); })]);
+						return rpc(id, result(scoped, deps.tenant, ownerId,
+							receipt ? "completed" : "working", receipt));
+					} finally {
+						if (timeout) clearTimeout(timeout);
 					}
-					}
+				}
 				const savedDigest = await deps.readTaskDigest(scoped);
 				if (!savedDigest || savedDigest !== createHash("sha256").update(messageText).digest("hex")) {
 					return rpcError(id, -32009, "Request identity conflict", 409);

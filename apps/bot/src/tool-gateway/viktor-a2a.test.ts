@@ -123,6 +123,25 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect((await gateway.fetch(request(bearer(), "Д".repeat(4100)))).status).toBe(403);
 		expect(reserve).toHaveBeenCalledTimes(1);
 	});
+	it("returns a working Task promptly while a long owner request finishes", async () => {
+		vi.useFakeTimers();
+		try {
+			const { gateway, request, run, readReceipt } = setup();
+			let finish!: (receipt: { agentRunId: string; responseText: string; toolReceipt: never[] }) => void;
+			run.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+			const pending = gateway.fetch(request());
+			await vi.advanceTimersByTimeAsync(1500);
+			const response = await pending;
+			expect((await response.json() as { result: { status: { state: string } } }).result.status.state).toBe("working");
+			finish({ agentRunId: "run-1", responseText: "Learnings", toolReceipt: [] });
+			readReceipt.mockResolvedValue({ agentRunId: "run-1", responseText: "Learnings", toolReceipt: [] });
+			const completed = await gateway.fetch(request(bearer(),
+				createHash("sha256").update(`workspace-a\0${owner}`).digest("hex") + ".req-1", "tasks/get"));
+			expect((await completed.json() as { result: { status: { state: string } } }).result.status.state).toBe("completed");
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 
 	it("rejects the same request ID with different text without replaying the model", async () => {
 		const { gateway, request, run } = setup();
