@@ -43,6 +43,20 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 }
 
 describe("Viktor owner-scoped A2A endpoint", () => {
+	it("accepts Twin's advertised skill target but rejects a foreign target", async () => {
+		const { gateway, request, run } = setup();
+		const original = await request().json() as { params: { message: { metadata: Record<string, unknown> } } };
+		original.params.message.metadata.target = "viktor.read_workspace_learnings";
+		const targeted = new Request(audience, { method: "POST", headers: { authorization: `Bearer ${bearer()}` },
+			body: JSON.stringify(original) });
+		expect((await gateway.fetch(targeted)).status).toBe(200);
+		expect(run).toHaveBeenCalledTimes(1);
+		original.params.message.metadata.target = "viktor.execute_external_tool";
+		const foreign = new Request(audience, { method: "POST", headers: { authorization: `Bearer ${bearer()}` },
+			body: JSON.stringify(original) });
+		expect((await gateway.fetch(foreign)).status).toBe(403);
+		expect(run).toHaveBeenCalledTimes(1);
+	});
 	it("serves a public v0.3 AgentCard advertising scoped bearer JWT and the exact URL", async () => {
 		const { gateway } = setup();
 		const cardResponse = await gateway.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"));

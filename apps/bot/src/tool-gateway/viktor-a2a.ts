@@ -158,7 +158,8 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 				|| typeof parts[0] !== "object" || parts[0].kind !== "text"
 				|| typeof parts[0].text !== "string" || !parts[0].text.trim()
 				|| new TextEncoder().encode(parts[0].text).length > 2000
-				|| !metadata || Object.keys(metadata).sort().join(",") !== "tvin.owner_scope"
+				|| !metadata || Object.keys(metadata).some((key) => key !== "tvin.owner_scope" && key !== "target")
+				|| ("target" in metadata && metadata.target !== "viktor.read_workspace_learnings")
 				|| !scope || typeof scope !== "object" || Array.isArray(scope)
 				|| (scope as Record<string, unknown>).ownerId !== ownerId
 				|| (scope as Record<string, unknown>).tenant !== deps.tenant) {
