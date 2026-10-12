@@ -46,14 +46,17 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 }
 
 describe("Viktor owner-scoped A2A endpoint", () => {
-	it("accepts Twin's advertised skill target but rejects a foreign target", async () => {
+	it("accepts the full-agent target but rejects a foreign target", async () => {
 		const { gateway, request, run } = setup();
 		const original = await request().json() as { params: { message: { metadata: Record<string, unknown> } } };
-		original.params.message.metadata.target = "viktor.read_workspace_learnings";
+		original.params.message.metadata.target = "viktor.full_agent_task";
 		const targeted = new Request(audience, { method: "POST", headers: { authorization: `Bearer ${bearer()}` },
 			body: JSON.stringify(original) });
 		expect((await gateway.fetch(targeted)).status).toBe(200);
 		expect(run).toHaveBeenCalledTimes(1);
+		expect(run).toHaveBeenCalledWith(expect.objectContaining({
+			task: "Summarize learnings", allowedTools: ["read_learnings"],
+		}));
 		original.params.message.metadata.target = "viktor.execute_external_tool";
 		const foreign = new Request(audience, { method: "POST", headers: { authorization: `Bearer ${bearer()}` },
 			body: JSON.stringify(original) });
@@ -67,7 +70,7 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect(await cardResponse.json()).toMatchObject({ protocolVersion: "0.3.0", name: "Viktor",
 			url: audience, preferredTransport: "JSONRPC",
 			securitySchemes: { ownerJwt: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
-			security: [{ ownerJwt: [] }], skills: [{ id: "viktor.read_workspace_learnings" }] });
+			security: [{ ownerJwt: [] }], skills: [{ id: "viktor.full_agent_task" }] });
 	});
 	it("rejects verifier key symlinks and writable public keys", () => {
 		const directory = mkdtempSync(join(tmpdir(), "viktor-a2a-"));

@@ -6,6 +6,7 @@ import type { AgentGrant, AgentReceipt, AgentTask, AgentTaskGatewayDeps } from "
 
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const OWNER = /^owner:tg:([1-9][0-9]*)$/;
+const FULL_AGENT_SKILL = "viktor.full_agent_task";
 const READ_TOOLS = ["read_learnings"];
 
 export function readViktorA2APublicKeyFile(path: string): KeyObject {
@@ -109,13 +110,14 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 		if (req.method === "GET" && new URL(req.url).pathname === "/.well-known/agent-card.json") {
 			return Response.json({
 				protocolVersion: "0.3.0", name: "Viktor", url: deps.audience,
-				description: "Owner-scoped read-only workspace learnings",
+				description: "Owner-scoped full-agent task with read-only workspace access",
 				version: "1.0.0", preferredTransport: "JSONRPC",
 				capabilities: {}, defaultInputModes: ["text/plain"], defaultOutputModes: ["text/plain"],
 				securitySchemes: { ownerJwt: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
 				security: [{ ownerJwt: [] }],
-				skills: [{ id: "viktor.read_workspace_learnings", name: "Read workspace learnings",
-					description: "Answer a read-only owner task using workspace learnings", tags: ["learnings"] }],
+				skills: [{ id: FULL_AGENT_SKILL, name: "Full agent task",
+					description: "Run an owner task through Viktor's agent runner with read-only workspace access",
+					tags: ["agent", "read-only"] }],
 			});
 		}
 		if (req.method !== "POST" || new URL(req.url).pathname !== new URL(deps.audience).pathname) {
@@ -165,7 +167,7 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 				|| typeof parts[0].text !== "string" || !parts[0].text.trim()
 				|| new TextEncoder().encode(parts[0].text).length > 8192
 				|| !metadata || Object.keys(metadata).some((key) => key !== "tvin.owner_scope" && key !== "target")
-				|| ("target" in metadata && metadata.target !== "viktor.read_workspace_learnings")
+				|| ("target" in metadata && metadata.target !== FULL_AGENT_SKILL)
 				|| !scope || typeof scope !== "object" || Array.isArray(scope)
 				|| (scope as Record<string, unknown>).ownerId !== ownerId
 				|| (scope as Record<string, unknown>).tenant !== deps.tenant) {
