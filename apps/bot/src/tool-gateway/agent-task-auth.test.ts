@@ -19,11 +19,16 @@ afterEach(() => dirs.splice(0).forEach((dir) => rmSync(dir, { recursive: true, f
 describe("Viktor owner-scoped grant file", () => {
 	it("reads only the bound owner identity and fails closed after grant removal", () => {
 		const path = fixture();
+		chmodSync(path, 0o600);
+		writeFileSync(path, JSON.stringify({ workspaceId: "ws-owner", principalId: "tg-123" }), { mode: 0o400 });
+		chmodSync(path, 0o400);
 		const binding = readOwnerAgentBindingFile(path);
-		expect(binding()).toEqual({ workspaceId: "ws-owner", principalId: "tg-123",
-			expiresAt: expect.any(Number) });
+		expect(binding()).toEqual({ workspaceId: "ws-owner", principalId: "tg-123" });
 		rmSync(path);
 		expect(binding()).toBeNull();
+	});
+	it("rejects temporary grants as A2A service bindings", () => {
+		expect(() => readOwnerAgentBindingFile(fixture())).toThrow("Binding shape invalid");
 	});
 	it("binds an exact token to its workspace and principal", () => {
 		const lookup = readAgentGrantFile(fixture());

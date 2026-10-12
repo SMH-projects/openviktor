@@ -154,7 +154,7 @@ function createEventDeduplicator(ttlMs = 300_000) {
 
 async function main(): Promise<void> {
 	const config = loadConfig();
-	assertOwnerAgentBackend(config.TOOL_BACKEND, process.env.VIKTOR_TWIN_GRANT_FILE);
+	assertOwnerAgentBackend(config.TOOL_BACKEND, process.env.VIKTOR_TWIN_GRANT_FILE ?? process.env.VIKTOR_TWIN_BINDING_FILE);
 	const mode = config.DEPLOYMENT_MODE;
 
 	await prisma.$connect();
@@ -233,15 +233,19 @@ async function main(): Promise<void> {
 	const a2aAudience = process.env.VIKTOR_A2A_AUDIENCE;
 	const a2aTenant = process.env.VIKTOR_A2A_TENANT;
 	const a2aPublicKeyFile = process.env.VIKTOR_A2A_PUBLIC_KEY_FILE;
+	const bindingPath = process.env.VIKTOR_TWIN_BINDING_FILE;
 	if ([a2aAudience, a2aTenant, a2aPublicKeyFile].some(Boolean)
-		&& (!grantPath || !taskRuntime || !a2aAudience || !a2aTenant || !a2aPublicKeyFile)) {
-		throw new Error("Viktor A2A requires a scoped grant, tenant, audience and public verifier");
+		&& (!bindingPath || !a2aAudience || !a2aTenant || !a2aPublicKeyFile)) {
+		throw new Error("Viktor A2A requires a permanent binding, tenant, audience and public verifier");
 	}
-	const a2aTasks = grantPath && taskRuntime && a2aAudience && a2aTenant && a2aPublicKeyFile
+	const a2aRuntime = bindingPath ? createAgentTaskRuntime(prisma, runner, (workspaceId) =>
+		createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
+			registry.getDefinitions(), ["read_learnings"])) : null;
+	const a2aTasks = bindingPath && a2aRuntime && a2aAudience && a2aTenant && a2aPublicKeyFile
 		? createViktorA2AGateway({
 			publicKey: readViktorA2APublicKeyFile(a2aPublicKeyFile),
 			audience: a2aAudience, tenant: a2aTenant,
-			readBinding: readOwnerAgentBindingFile(grantPath), ...taskRuntime,
+			readBinding: readOwnerAgentBindingFile(bindingPath), ...a2aRuntime,
 		})
 		: null;
 
