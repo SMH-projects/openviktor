@@ -3,9 +3,9 @@ import type { PrismaClient } from "@openviktor/db";
 import type { AgentRunner } from "../agent/runner.js";
 import type { ToolConfig } from "../agent/runner.js";
 import type { AgentReceipt, AgentTask } from "./agent-task.js";
+import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const CHANNEL = "__twin_owner__";
-const READ_TOOLS = ["read_learnings"];
 const UNCERTAIN_AFTER_MS = 20 * 60 * 1000;
 
 function threadKey(scope: Omit<AgentTask, "task">): string {
@@ -124,7 +124,7 @@ export function createAgentTaskRuntime(
 						slackChannel: CHANNEL,
 						slackThreadTs: threadKey(scope),
 						userMessage: scope.task,
-						allowedTools: READ_TOOLS,
+						allowedTools: [...READ_ONLY_TOOLS],
 						promptContext: {
 							workspaceName: workspace.slackTeamName,
 							channel: CHANNEL,

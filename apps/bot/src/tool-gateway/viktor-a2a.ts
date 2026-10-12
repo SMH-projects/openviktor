@@ -3,11 +3,11 @@ import { lstatSync, readFileSync } from "node:fs";
 import { isAbsolute } from "node:path";
 import { LLMError } from "@openviktor/shared";
 import type { AgentGrant, AgentReceipt, AgentTask, AgentTaskGatewayDeps } from "./agent-task.js";
+import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 const OWNER = /^owner:tg:([1-9][0-9]*)$/;
 const FULL_AGENT_SKILL = "viktor.full_agent_task";
-const READ_TOOLS = ["read_learnings"];
 
 export function readViktorA2APublicKeyFile(path: string): KeyObject {
 	if (!isAbsolute(path)) throw new Error("Viktor A2A verifier path must be absolute");
@@ -191,7 +191,7 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 					let timeout: ReturnType<typeof setTimeout> | undefined;
 					try {
 						const running = Promise.resolve().then(() => deps.run({ ...scoped,
-							task: messageText, allowedTools: [...READ_TOOLS] })).then(
+							task: messageText, allowedTools: [...READ_ONLY_TOOLS] })).then(
 							(receipt) => ({ receipt, failureReason: undefined }),
 							(error: unknown) => ({ receipt: null,
 								failureReason: error instanceof LLMError ? error.message : undefined }),

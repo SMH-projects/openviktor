@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { LLMError } from "@openviktor/shared";
 import { describe, expect, it, vi } from "vitest";
 import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./viktor-a2a.js";
+import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const keys = generateKeyPairSync("ed25519");
 const audience = "https://viktor.example.test/a2a";
@@ -55,7 +56,7 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect((await gateway.fetch(targeted)).status).toBe(200);
 		expect(run).toHaveBeenCalledTimes(1);
 		expect(run).toHaveBeenCalledWith(expect.objectContaining({
-			task: "Summarize learnings", allowedTools: ["read_learnings"],
+			task: "Summarize learnings", allowedTools: [...READ_ONLY_TOOLS],
 		}));
 		original.params.message.metadata.target = "viktor.execute_external_tool";
 		const foreign = new Request(audience, { method: "POST", headers: { authorization: `Bearer ${bearer()}` },

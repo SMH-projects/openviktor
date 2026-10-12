@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createAgentTaskGateway } from "./agent-task.js";
+import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const grant = { workspaceId: "workspace-a", principalId: "tg-123", expiresAt: Date.now() + 60_000 };
 const payload = { workspaceId: "workspace-a", principalId: "tg-123", requestId: "route-100", task: "Summarize learnings" };
@@ -38,7 +39,9 @@ describe("owner-scoped Viktor agent task", () => {
 		const { gateway, request, run } = setup();
 		const response = await gateway.fetch(request(payload));
 		expect(response.status).toBe(200);
-		expect(run).toHaveBeenCalledWith({ ...payload, allowedTools: ["read_learnings"] });
+		expect(run).toHaveBeenCalledWith({ ...payload, allowedTools: [...READ_ONLY_TOOLS] });
+		expect(READ_ONLY_TOOLS).toEqual(expect.arrayContaining(["file_read", "grep", "workspace_tree"]));
+		expect(READ_ONLY_TOOLS).not.toEqual(expect.arrayContaining(["bash", "file_write", "coworker_send_slack_message"]));
 		expect(await response.json()).toEqual({ requestId: "route-100", agentRunId: "run-42",
 			responseText: "Two learnings", toolReceipt: [], ownerDelivery: "not_verified" });
 	});

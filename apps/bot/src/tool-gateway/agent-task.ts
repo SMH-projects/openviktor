@@ -1,3 +1,5 @@
+import { READ_ONLY_TOOLS } from "./read-only-tools.js";
+
 export interface AgentGrant {
 	workspaceId: string;
 	principalId: string;
@@ -26,7 +28,6 @@ export interface AgentTaskGatewayDeps {
 	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
 }
 
-const ALLOWED_TOOLS = ["read_learnings"];
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
 export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (req: Request) => Promise<Response> } {
@@ -89,7 +90,7 @@ export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (re
 				return Response.json({ error: "Request already reserved; reconcile before retry" }, { status: 409 });
 			}
 			try {
-				const receipt = await deps.run({ ...scopedTask, allowedTools: [...ALLOWED_TOOLS] });
+				const receipt = await deps.run({ ...scopedTask, allowedTools: [...READ_ONLY_TOOLS] });
 				return Response.json({ requestId: scopedTask.requestId, ...receipt,
 					ownerDelivery: "not_verified" });
 			} catch {
