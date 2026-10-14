@@ -11,6 +11,8 @@ import {
 	type RequestContext,
 	type ExecutionEventBus,
 } from "@a2a-js/sdk/server";
+import { duplicateInterfacesForLegacy, isLegacyJsonRpcMethod } from "@a2a-js/sdk/compat/v0_3";
+import { LegacyJsonRpcTransportHandler } from "@a2a-js/sdk/compat/v0_3/server";
 import { Role, TaskState, type AgentCard } from "@a2a-js/sdk";
 import type { AgentGrant, AgentReceipt, AgentTask, AgentTaskGatewayDeps } from "./agent-task.js";
 
@@ -88,7 +90,8 @@ function createCard(audience: string, tenant: string): AgentCard {
 	return {
 		name: "Viktor",
 		description: "Owner-scoped read-only workspace learnings",
-		supportedInterfaces: [{ protocolBinding: "JSONRPC", url: audience, tenant, protocolVersion: "1.0" }],
+		supportedInterfaces: duplicateInterfacesForLegacy(
+			[{ protocolBinding: "JSONRPC", url: audience, tenant, protocolVersion: "1.0" }], ["JSONRPC"]),
 		provider: { organization: "SMH-projects", url: "https://github.com/SMH-projects/openviktor" },
 		version: "1.0.0",
 		capabilities: { streaming: false, pushNotifications: false, extensions: [] },
@@ -161,9 +164,13 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 	const card = createCard(deps.audience, deps.tenant);
 	const handler = new DefaultRequestHandler(card, new InMemoryTaskStore(), createExecutor(deps));
 	const transport = new JsonRpcTransportHandler(handler);
+	const legacyTransport = new LegacyJsonRpcTransportHandler(handler);
 	return { fetch: async (req) => {
 		const url = new URL(req.url);
-		if (req.method === "GET" && url.pathname === "/.well-known/agent-card.json") return Response.json(await handler.getAgentCard());
+		if (req.method === "GET" && url.pathname === "/.well-known/agent-card.json") {
+			const agentCard = await handler.getAgentCard();
+			return Response.json({ ...agentCard, url: deps.audience, preferredTransport: "JSONRPC", protocolVersion: "0.3" });
+		}
 		if (req.method !== "POST" || url.pathname !== new URL(deps.audience).pathname) return Response.json({ error: "Not found" }, { status: 404 });
 		const ownerId = verifiedOwner(req.headers.get("authorization"), deps);
 		if (!ownerId) return Response.json({ error: "Unauthorized" }, { status: 401 });
@@ -181,7 +188,10 @@ export function createViktorA2AGateway(deps: A2ADeps): { fetch: (req: Request) =
 			return Response.json({ error: "Forbidden" }, { status: 403 });
 		}
 		const context = new ServerCallContext({ tenant: deps.tenant, requestedVersion: "1.0", state: new Map([["ownerId", ownerId]]) });
-		const result = await transport.handle(body as Record<string, unknown>, context);
+		const requestBody = body as Record<string, unknown>;
+		const result = isLegacyJsonRpcMethod(requestBody.method)
+			? await legacyTransport.handle(requestBody, context)
+			: await transport.handle(requestBody, context);
 		const response = result instanceof Object && Symbol.asyncIterator in result
 			? await (async () => { let last: unknown; for await (const item of result) last = item; return last; })()
 			: result;

@@ -45,7 +45,11 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		const cardResponse = await gateway.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"));
 		expect(cardResponse.status).toBe(200);
 		expect(await cardResponse.json()).toMatchObject({ name: "Viktor",
-			supportedInterfaces: [{ protocolBinding: "JSONRPC", url: audience, protocolVersion: "1.0" }],
+			url: audience, protocolVersion: "0.3",
+			supportedInterfaces: expect.arrayContaining([
+				{ protocolBinding: "JSONRPC", url: audience, tenant: "workspace-a", protocolVersion: "1.0" },
+				{ protocolBinding: "JSONRPC", url: audience, tenant: "workspace-a", protocolVersion: "0.3" },
+			]),
 			securitySchemes: { ownerJwt: { scheme: { $case: "httpAuthSecurityScheme",
 				value: { scheme: "Bearer", bearerFormat: "JWT" } } } },
 			securityRequirements: [{ schemes: { ownerJwt: { list: [] } } }],
@@ -110,6 +114,19 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect(first.status).toBe(200);
 		expect(await first.json()).toMatchObject({ jsonrpc: "2.0", id: 42,
 			result: { task: { id: expect.any(String), status: { state: "TASK_STATE_COMPLETED" } } } });
+			expect(run).toHaveBeenCalledTimes(1);
+	});
+
+	it("accepts legacy v0.3 JSON-RPC through the SDK compatibility transport", async () => {
+		const { gateway, run } = setup();
+		const response = await gateway.fetch(new Request(audience, { method: "POST",
+			headers: { authorization: `Bearer ${bearer()}` },
+			body: JSON.stringify({ jsonrpc: "2.0", id: "legacy-1", method: "message/send", params: {
+				message: { kind: "message", role: "user", messageId: "legacy-1", parts: [{ kind: "text", text: "Summarize learnings" }],
+					metadata: { "tvin.owner_scope": { tenant: "workspace-a", ownerId: owner } } },
+			} }) }));
+		expect(response.status).toBe(200);
+		expect(await response.json()).toMatchObject({ jsonrpc: "2.0", id: "legacy-1", result: { kind: "task", status: { state: "completed" } } });
 		expect(run).toHaveBeenCalledTimes(1);
 	});
 
