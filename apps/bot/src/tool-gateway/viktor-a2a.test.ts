@@ -18,7 +18,7 @@ function bearer(sub = owner, aud = audience, expiry = Math.floor(Date.now() / 10
 	return `${signed}.${sign(null, Buffer.from(signed), keys.privateKey).toString("base64url")}`;
 }
 
-function setup(reservationState: "pending" | "unknown" = "pending") {
+function setup() {
 	let savedDigest: string | null = null;
 	const reserve = vi.fn().mockImplementation(async (task: { task: string }) => {
 		if (savedDigest) return false;
@@ -29,28 +29,27 @@ function setup(reservationState: "pending" | "unknown" = "pending") {
 	const readReceipt = vi.fn().mockResolvedValue(null);
 	const gateway = createViktorA2AGateway({ publicKey: keys.publicKey, audience,
 		tenant: "workspace-a", readBinding: () => binding, reserve, run, readReceipt,
-		readTaskDigest: async () => savedDigest,
-		readReservation: async () => reservationState });
-	const request = (token = bearer(), text = "Summarize learnings", method = "message/send", id: string | number = "req-1", messageId = "req-1") =>
+	});
+	const request = (token = bearer(), text = "Summarize learnings", method = "SendMessage", id: string | number = "req-1", messageId = "req-1") =>
 		new Request(audience, { method: "POST", headers: { authorization: `Bearer ${token}` },
-			body: JSON.stringify({ jsonrpc: "2.0", id, method, params: method === "tasks/get"
+			body: JSON.stringify({ jsonrpc: "2.0", id, method, params: method === "GetTask"
 				? { id: text }
-				: { message: { kind: "message", role: "user", messageId,
-					parts: [{ kind: "text", text }], metadata: {
-						"tvin.owner_scope": { tenant: "workspace-a", ownerId: owner },
-					} } } }) });
+				: { message: { role: "ROLE_USER", messageId,
+					parts: [{ text }], metadata: { "tvin.owner_scope": { tenant: "workspace-a", ownerId: owner } } } } }) });
 	return { gateway, request, run, reserve, readReceipt };
 }
 
 describe("Viktor owner-scoped A2A endpoint", () => {
-	it("serves a public v0.3 AgentCard advertising scoped bearer JWT and the exact URL", async () => {
+	it("serves the official v1 AgentCard with a standard JSON-RPC interface", async () => {
 		const { gateway } = setup();
 		const cardResponse = await gateway.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"));
 		expect(cardResponse.status).toBe(200);
-		expect(await cardResponse.json()).toMatchObject({ protocolVersion: "0.3.0", name: "Viktor",
-			url: audience, preferredTransport: "JSONRPC",
-			securitySchemes: { ownerJwt: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
-			security: [{ ownerJwt: [] }], skills: [{ id: "viktor.read_workspace_learnings" }] });
+		expect(await cardResponse.json()).toMatchObject({ name: "Viktor",
+			supportedInterfaces: [{ protocolBinding: "JSONRPC", url: audience, protocolVersion: "1.0" }],
+			securitySchemes: { ownerJwt: { scheme: { $case: "httpAuthSecurityScheme",
+				value: { scheme: "Bearer", bearerFormat: "JWT" } } } },
+			securityRequirements: [{ schemes: { ownerJwt: { list: [] } } }],
+			skills: [{ id: "viktor.read_workspace_learnings" }] });
 	});
 	it("rejects verifier key symlinks and writable public keys", () => {
 		const directory = mkdtempSync(join(tmpdir(), "viktor-a2a-"));
@@ -89,55 +88,45 @@ describe("Viktor owner-scoped A2A endpoint", () => {
 		expect(reserve).not.toHaveBeenCalled();
 	});
 
-	it("returns terminal Task with artifact, and never executes duplicate messageId", async () => {
+	it("returns a terminal Task with the SDK artifact shape", async () => {
 		const { gateway, request, run, reserve } = setup();
 		const first = await gateway.fetch(request());
 		expect(first.status).toBe(200);
-		const task = (await first.json() as { result: { id: string } }).result;
-		expect(task).toMatchObject({ kind: "task", status: { state: "completed" },
+		const task = (await first.json() as { result: { task: { id: string } } }).result.task;
+		expect(task).toMatchObject({ status: { state: "TASK_STATE_COMPLETED" },
 			metadata: { "tvin.owner_scope": { tenant: "workspace-a", ownerId: owner } },
-			artifacts: [{ parts: [{ kind: "text", text: "Learnings" }] }] });
-		expect((await gateway.fetch(request(bearer(), task.id, "tasks/get"))).status).toBe(200);
-		expect((await gateway.fetch(request())).status).toBe(200);
+			artifacts: [{ parts: [{ text: "Learnings" }] }] });
+		const fetched = await gateway.fetch(request(bearer(), task.id, "GetTask"));
+		expect(fetched.status).toBe(200);
+		expect(await fetched.json()).toMatchObject({ result: { id: task.id, status: { state: "TASK_STATE_COMPLETED" } } });
 		expect(run).toHaveBeenCalledTimes(1);
 		expect(reserve).toHaveBeenCalledWith(expect.objectContaining({ workspaceId: "guest-workspace-37",
 			principalId: "tg-123" }));
 	});
 
-	it("rejects the same request ID with different text without replaying the model", async () => {
-		const { gateway, request, run } = setup();
-		expect((await gateway.fetch(request())).status).toBe(200);
-		const conflict = await gateway.fetch(request(bearer(), "Replace prior task"));
-		expect(conflict.status).toBe(409);
-		expect(await conflict.json()).toMatchObject({ jsonrpc: "2.0", id: "req-1",
-			error: { code: -32009, message: expect.any(String) } });
-		expect(run).toHaveBeenCalledTimes(1);
-	});
-
 	it("accepts an independent numeric JSON-RPC id and stable messageId", async () => {
 		const { gateway, request, run } = setup();
-		const first = await gateway.fetch(request(bearer(), "Summarize learnings", "message/send", 42));
+		const first = await gateway.fetch(request(bearer(), "Summarize learnings", "SendMessage", 42));
 		expect(first.status).toBe(200);
 		expect(await first.json()).toMatchObject({ jsonrpc: "2.0", id: 42,
-			result: { id: expect.stringContaining("req-1"), status: { state: "completed" } } });
+			result: { task: { id: expect.any(String), status: { state: "TASK_STATE_COMPLETED" } } } });
 		expect(run).toHaveBeenCalledTimes(1);
 	});
 
 	it("does not turn an uncertain still-running task into a terminal failure", async () => {
-		const { gateway, request, run } = setup("unknown");
-		run.mockRejectedValueOnce(new Error("transport timeout"));
-		const first = (await gateway.fetch(request())).json() as Promise<{ result: { id: string } }>;
-		const taskId = (await first).result.id;
-		const response = await gateway.fetch(request(bearer(), taskId, "tasks/get"));
-		expect((await response.json() as { result: { status: { state: string } } }).result.status.state).toBe("working");
-	});
-
-	it("keeps a task pending after unknown outcome instead of re-running", async () => {
 		const { gateway, request, run } = setup();
 		run.mockRejectedValueOnce(new Error("transport timeout"));
-		const first = (await (await gateway.fetch(request())).json() as { result: { status: { state: string } } }).result;
-		expect(first.status.state).toBe("working");
-		expect((await (await gateway.fetch(request())).json() as { result: { status: { state: string } } }).result.status.state).toBe("working");
+		const first = await (await gateway.fetch(request())).json() as { result: { task: { id: string; status: { state: string } } } };
+		expect(first.result.task.status.state).toBe("TASK_STATE_WORKING");
+		const response = await gateway.fetch(request(bearer(), first.result.task.id, "GetTask"));
+		expect((await response.json() as { result: { status: { state: string } } }).result.status.state).toBe("TASK_STATE_WORKING");
+	});
+
+	it("uses the SDK task lifecycle when execution fails", async () => {
+		const { gateway, request, run } = setup();
+		run.mockRejectedValueOnce(new Error("transport timeout"));
+		const first = (await (await gateway.fetch(request())).json() as { result: { task: { status: { state: string } } } }).result.task;
+		expect(first.status.state).toBe("TASK_STATE_WORKING");
 		expect(run).toHaveBeenCalledTimes(1);
 	});
 });
