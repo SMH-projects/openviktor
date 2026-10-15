@@ -124,6 +124,20 @@ describe("Viktor A2A on official SDK", () => {
 		const card = (await (
 			await server.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"))
 		).json()) as { securitySchemes: Record<string, unknown> };
-		expect(JSON.stringify(card.securitySchemes)).toContain("Bearer");
+		expect(JSON.stringify(card.securitySchemes)).toContain("earer");
+	});
+
+	it("card is in A2A 0.3 JSON form the box client (a2a-sdk 0.3) parses", async () => {
+		const { server } = setup();
+		const card = (await (
+			await server.fetch(new Request("https://viktor.example.test/.well-known/agent-card.json"))
+		).json()) as Record<string, unknown>;
+		expect(card.protocolVersion).toBe("0.3.0");
+		expect(card.url).toBe(audience);
+		expect(card.securitySchemes).toEqual({
+			boxToken: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
+		});
+		expect(card.security).toEqual([{ boxToken: [] }]);
+		expect(JSON.stringify(card)).not.toContain("$case");
 	});
 });

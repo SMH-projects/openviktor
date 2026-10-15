@@ -178,6 +178,36 @@ function createCard(deps: ViktorA2ADeps): AgentCard {
 	};
 }
 
+/**
+ * Public card in A2A 0.3 JSON form: this is what the box client (official a2a-sdk 0.3 resolver in the
+ * twin) parses. The SDK's own card object is the internal protobuf shape ($case wrappers, no top-level
+ * url/security) and is rejected by that client, so Viktor would never be offered to the owner.
+ */
+export function createLegacyCard(deps: ViktorA2ADeps) {
+	return {
+		protocolVersion: "0.3.0",
+		name: "Viktor",
+		description: "Workspace agent, called by the box as a service",
+		url: deps.audience,
+		preferredTransport: "JSONRPC",
+		version: "1.0.0",
+		provider: { organization: "SMH-projects", url: "https://github.com/SMH-projects/openviktor" },
+		capabilities: { streaming: false, pushNotifications: false, stateTransitionHistory: false },
+		securitySchemes: { boxToken: { type: "http", scheme: "bearer", bearerFormat: "JWT" } },
+		security: [{ boxToken: [] }],
+		defaultInputModes: ["text/plain"],
+		defaultOutputModes: ["text/plain"],
+		skills: [
+			{
+				id: SKILL,
+				name: "Full agent task",
+				description: "Run a task through Viktor's agent runner with read-only workspace access",
+				tags: ["agent", "read-only"],
+			},
+		],
+	};
+}
+
 function createExecutor(deps: ViktorA2ADeps): AgentExecutor {
 	return {
 		execute: async (context, events) => {
@@ -285,7 +315,7 @@ export function createViktorA2AServer(deps: ViktorA2ADeps): {
 		fetch: async (req) => {
 			const url = new URL(req.url);
 			if (req.method === "GET" && url.pathname === "/.well-known/agent-card.json") {
-				return Response.json(await handler.getAgentCard());
+				return Response.json(createLegacyCard(deps));
 			}
 			if (req.method !== "POST" || url.pathname !== path) {
 				return Response.json({ error: "Not found" }, { status: 404 });
