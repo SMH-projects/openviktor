@@ -25,7 +25,7 @@ export interface AgentTaskGatewayDeps {
 	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
 }
 
-const ALLOWED_TOOLS = ["read_learnings"];
+export const OWNER_READ_TOOLS = ["read_learnings", "list_skills", "read_skill"];
 const IDENTIFIER = /^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$/;
 
 export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (req: Request) => Promise<Response> } {
@@ -88,7 +88,7 @@ export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (re
 				return Response.json({ error: "Request already reserved; reconcile before retry" }, { status: 409 });
 			}
 			try {
-				const receipt = await deps.run({ ...scopedTask, allowedTools: [...ALLOWED_TOOLS] });
+				const receipt = await deps.run({ ...scopedTask, allowedTools: [...OWNER_READ_TOOLS] });
 				return Response.json({ requestId: scopedTask.requestId, ...receipt,
 					ownerDelivery: "not_verified" });
 			} catch {

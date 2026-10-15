@@ -107,6 +107,11 @@ describe("list_skills", () => {
 		expect(result.output).toContain("**company** (v1) — Company context");
 		expect(result.output).toContain("**team** (v3)");
 		expect(result.output).not.toContain("**team** (v3) —");
+		expect(prisma.skill.findMany).toHaveBeenCalledWith({
+			where: { workspaceId: "ws_test" },
+			select: { name: true, description: true, version: true },
+			orderBy: { name: "asc" },
+		});
 	});
 });
 

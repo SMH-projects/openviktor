@@ -2,10 +2,9 @@ import { createHash } from "node:crypto";
 import type { PrismaClient } from "@openviktor/db";
 import type { AgentRunner } from "../agent/runner.js";
 import type { ToolConfig } from "../agent/runner.js";
-import type { AgentReceipt, AgentTask } from "./agent-task.js";
+import { OWNER_READ_TOOLS, type AgentReceipt, type AgentTask } from "./agent-task.js";
 
 const CHANNEL = "__twin_owner__";
-const READ_TOOLS = ["read_learnings"];
 const UNCERTAIN_AFTER_MS = 20 * 60 * 1000;
 
 function threadKey(scope: Omit<AgentTask, "task">): string {
@@ -79,7 +78,7 @@ export function createAgentTaskRuntime(prisma: PrismaClient, runner: AgentRunner
 				result = await runner.run({
 					workspaceId: scope.workspaceId, memberId: null, triggerType: "MANUAL",
 					slackChannel: CHANNEL, slackThreadTs: threadKey(scope), userMessage: scope.task,
-					allowedTools: READ_TOOLS,
+					allowedTools: [...OWNER_READ_TOOLS],
 					promptContext: { workspaceName: workspace.slackTeamName,
 						channel: CHANNEL, triggerType: "MANUAL" },
 				}, undefined, access.config);
