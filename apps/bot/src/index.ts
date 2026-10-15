@@ -44,7 +44,7 @@ import { READ_ONLY_TOOLS } from "./tool-gateway/read-only-tools.js";
 import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
 import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
 import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
-import { createViktorA2AGateway, readViktorA2APublicKeyFile } from "./tool-gateway/viktor-a2a.js";
+import { createViktorA2AServer, readViktorA2APublicKeyFile } from "./tool-gateway/viktor-a2a-server.js";
 import { createScopedToolAccess } from "./tool-gateway/scoped-tools.js";
 import { createBenchHandler } from "./bench/handler.js";
 import {
@@ -243,7 +243,7 @@ async function main(): Promise<void> {
 		createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
 			registry.getDefinitions(), READ_ONLY_TOOLS)) : null;
 	const a2aTasks = bindingPath && a2aRuntime && a2aAudience && a2aTenant && a2aPublicKeyFile
-		? createViktorA2AGateway({
+		? createViktorA2AServer({
 			publicKey: readViktorA2APublicKeyFile(a2aPublicKeyFile),
 			audience: a2aAudience, tenant: a2aTenant,
 			readBinding: readOwnerAgentBindingFile(bindingPath), ...a2aRuntime,
