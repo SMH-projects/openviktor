@@ -13,7 +13,6 @@ import {
 	ServerCallContext,
 } from "@a2a-js/sdk/server";
 import type { AgentGrant, AgentTaskGatewayDeps } from "./agent-task.js";
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 /**
  * A2A server for Viktor on the official @a2a-js/sdk.
@@ -166,8 +165,8 @@ function createCard(deps: ViktorA2ADeps): AgentCard {
 			{
 				id: SKILL,
 				name: "Full agent task",
-				description: "Run a task through Viktor's agent runner with read-only workspace access",
-				tags: ["agent", "read-only"],
+				description: "Run a task through Viktor's native agent and workspace tools",
+				tags: ["agent", "workspace"],
 				examples: [],
 				inputModes: ["text/plain"],
 				outputModes: ["text/plain"],
@@ -201,8 +200,8 @@ export function createLegacyCard(deps: ViktorA2ADeps) {
 			{
 				id: SKILL,
 				name: "Full agent task",
-				description: "Run a task through Viktor's agent runner with read-only workspace access",
-				tags: ["agent", "read-only"],
+				description: "Run a task through Viktor's native agent and workspace tools",
+				tags: ["agent", "workspace"],
 			},
 		],
 	};
@@ -243,7 +242,6 @@ function createExecutor(deps: ViktorA2ADeps): AgentExecutor {
 				const receipt = await deps.run({
 					...scope,
 					task: text,
-					allowedTools: [...READ_ONLY_TOOLS],
 				});
 				events.publish(
 					AgentEvent.artifactUpdate({

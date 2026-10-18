@@ -40,7 +40,6 @@ import { LLMGateway } from "./agent/gateway.js";
 import { AnthropicProvider } from "./agent/providers/anthropic.js";
 import { AgentRunner } from "./agent/runner.js";
 import { readAgentGrantFile, readOwnerAgentBindingFile } from "./tool-gateway/agent-task-auth.js";
-import { READ_ONLY_TOOLS } from "./tool-gateway/read-only-tools.js";
 import { assertOwnerAgentBackend } from "./tool-gateway/agent-task-backend.js";
 import { createAgentTaskGateway } from "./tool-gateway/agent-task.js";
 import { createAgentTaskRuntime } from "./tool-gateway/agent-task-runtime.js";
@@ -226,7 +225,7 @@ async function main(): Promise<void> {
 	const taskRuntime = grantPath
 		? createAgentTaskRuntime(prisma, runner, (workspaceId) =>
 			createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
-				registry.getDefinitions(), READ_ONLY_TOOLS))
+				registry.getDefinitions()))
 		: null;
 	const agentTasks = grantPath && taskRuntime
 		? createAgentTaskGateway({ lookupGrant: readAgentGrantFile(grantPath), ...taskRuntime })
@@ -241,7 +240,7 @@ async function main(): Promise<void> {
 	}
 	const a2aRuntime = bindingPath ? createAgentTaskRuntime(prisma, runner, (workspaceId) =>
 		createScopedToolAccess(workspaceId, gatewayPort, config.TOOL_TIMEOUT_MS,
-			registry.getDefinitions(), READ_ONLY_TOOLS)) : null;
+			registry.getDefinitions())) : null;
 	const a2aTasks = bindingPath && a2aRuntime && a2aAudience && a2aTenant && a2aPublicKeyFile
 		? createViktorA2AServer({
 			publicKey: readViktorA2APublicKeyFile(a2aPublicKeyFile),

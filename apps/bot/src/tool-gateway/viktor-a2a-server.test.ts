@@ -1,6 +1,5 @@
 import { generateKeyPairSync, sign } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 import { createViktorA2AServer } from "./viktor-a2a-server.js";
 
 const keys = generateKeyPairSync("ed25519");
@@ -96,9 +95,9 @@ describe("Viktor A2A on official SDK", () => {
 				expect.objectContaining({
 					workspaceId: "ws-1",
 					principalId: "tg-8405041969",
-					allowedTools: [...READ_ONLY_TOOLS],
 				}),
 			);
+			expect(run.mock.calls[0][0]).not.toHaveProperty("allowedTools");
 		},
 	);
 

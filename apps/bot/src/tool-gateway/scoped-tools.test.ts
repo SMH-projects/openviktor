@@ -8,6 +8,35 @@ vi.mock("@openviktor/tools", async (importOriginal) => ({
 }));
 
 describe("isolated agent tool identity", () => {
+	it("grants every native registry tool by default while preserving the workspace binding", async () => {
+		const tools = ["file_write", "create_cron_job", "native_extension_action"].map((name) => ({
+			name, description: name, input_schema: { type: "object" as const, properties: {} },
+		}));
+		const access = createScopedToolAccess("workspace-native", 3001, 1000, tools);
+		const execute = vi.fn(async (_role: string, _args: unknown, context: { workspaceId: string }) => ({
+			output: { workspaceId: context.workspaceId },
+		}));
+		const gateway = createToolGateway({
+			registry: { resolve: vi.fn((role: string) => role), isLocalOnly: vi.fn().mockReturnValue(false) } as never,
+			backend: { execute } as never,
+			logger: { info: vi.fn(), warn: vi.fn() } as never,
+			defaultTimeoutMs: 1000,
+		});
+		try {
+			expect(access.config.tools).toBe(tools);
+			for (const tool of tools) {
+				const response = await gateway.fetch(new Request("http://localhost/v1/tools/call", {
+					method: "POST", headers: { authorization: `Bearer ${access.token}` },
+					body: JSON.stringify({ role: tool.name, arguments: { workspaceId: "foreign" } }),
+				}));
+				expect(response.status).toBe(200);
+				expect(await response.json()).toEqual({ result: { workspaceId: "workspace-native" } });
+			}
+			expect(execute).toHaveBeenCalledTimes(tools.length);
+		} finally {
+			access.dispose();
+		}
+	});
 	it("rejects shared or weak gateway tokens and cross-workspace rebinding", () => {
 		expect(() => registerWorkspaceToken("local", "workspace-a", ["read_learnings"], Date.now() + 1000)).toThrow();
 		const access = createScopedToolAccess("workspace-a", 3001, 1000, [], ["read_learnings"]);

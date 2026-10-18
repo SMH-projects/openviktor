@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { createAgentTaskGateway } from "./agent-task.js";
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const grant = { workspaceId: "workspace-a", principalId: "tg-123", expiresAt: Date.now() + 60_000 };
 const payload = { workspaceId: "workspace-a", principalId: "tg-123", requestId: "route-100", task: "Summarize learnings" };
@@ -35,13 +34,11 @@ describe("owner-scoped Viktor agent task", () => {
 		expect(run).not.toHaveBeenCalled();
 	});
 
-	it("runs the full agent only with a fixed read-only capability set and returns an unverified receipt", async () => {
+	it("runs the native agent without an A2A-specific tool allowlist and returns an unverified receipt", async () => {
 		const { gateway, request, run } = setup();
 		const response = await gateway.fetch(request(payload));
 		expect(response.status).toBe(200);
-		expect(run).toHaveBeenCalledWith({ ...payload, allowedTools: [...READ_ONLY_TOOLS] });
-		expect(READ_ONLY_TOOLS).toEqual(expect.arrayContaining(["file_read", "grep", "workspace_tree"]));
-		expect(READ_ONLY_TOOLS).not.toEqual(expect.arrayContaining(["bash", "file_write", "coworker_send_slack_message"]));
+		expect(run).toHaveBeenCalledWith(payload);
 		expect(await response.json()).toEqual({ requestId: "route-100", agentRunId: "run-42",
 			responseText: "Two learnings", toolReceipt: [], ownerDelivery: "not_verified" });
 	});

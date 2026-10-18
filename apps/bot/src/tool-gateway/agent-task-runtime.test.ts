@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { createAgentTaskRuntime } from "./agent-task-runtime.js";
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const scope = {
 	workspaceId: "workspace-a",
@@ -85,12 +84,11 @@ describe("Viktor agent durable reservation", () => {
 		const { runtime, prisma, runner, createAccess, scoped } = setup();
 		expect(await runtime.reserve(scope)).toBe(true);
 		expect(await runtime.reserve(scope)).toBe(false);
-		await runtime.run({ ...scope, allowedTools: [...READ_ONLY_TOOLS] });
+		await runtime.run(scope);
 		expect(prisma.thread.create).toHaveBeenCalledTimes(2);
 		expect(runner.run).toHaveBeenCalledWith(
 			expect.objectContaining({
 				workspaceId: scope.workspaceId,
-				allowedTools: [...READ_ONLY_TOOLS],
 				slackChannel: "__twin_owner__",
 				userMessage: scope.task,
 				promptContext: expect.objectContaining({ a2aTask: true }),
@@ -98,6 +96,7 @@ describe("Viktor agent durable reservation", () => {
 			undefined,
 			scoped.config,
 		);
+		expect(runner.run.mock.calls[0][0]).not.toHaveProperty("allowedTools");
 		expect(createAccess).toHaveBeenCalledWith("workspace-a");
 		expect(scoped.dispose).toHaveBeenCalledTimes(1);
 	});

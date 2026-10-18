@@ -3,7 +3,6 @@ import type { PrismaClient } from "@openviktor/db";
 import type { AgentRunner } from "../agent/runner.js";
 import type { ToolConfig } from "../agent/runner.js";
 import type { AgentReceipt, AgentTask } from "./agent-task.js";
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
 
 const CHANNEL = "__twin_owner__";
 const UNCERTAIN_AFTER_MS = 20 * 60 * 1000;
@@ -109,7 +108,7 @@ export function createAgentTaskRuntime(
 				throw error;
 			}
 		},
-		run: async (scope: AgentTask & { allowedTools: string[] }): Promise<AgentReceipt> => {
+		run: async (scope: AgentTask): Promise<AgentReceipt> => {
 			if (!(await reserved(scope))) throw new Error("No reserved owner scope");
 			const workspace = await prisma.workspace.findUnique({ where: { id: scope.workspaceId } });
 			if (!workspace?.isActive) throw new Error("Workspace unavailable");
@@ -124,7 +123,6 @@ export function createAgentTaskRuntime(
 						slackChannel: CHANNEL,
 						slackThreadTs: threadKey(scope),
 						userMessage: scope.task,
-						allowedTools: [...READ_ONLY_TOOLS],
 						promptContext: {
 							workspaceName: workspace.slackTeamName,
 							channel: CHANNEL,

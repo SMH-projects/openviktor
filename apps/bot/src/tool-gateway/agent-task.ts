@@ -1,5 +1,3 @@
-import { READ_ONLY_TOOLS } from "./read-only-tools.js";
-
 export interface AgentGrant {
 	workspaceId: string;
 	principalId: string;
@@ -22,7 +20,7 @@ export interface AgentReceipt {
 export interface AgentTaskGatewayDeps {
 	lookupGrant: (token: string) => AgentGrant | null;
 	reserve: (scope: AgentTask) => Promise<boolean>;
-	run: (task: AgentTask & { allowedTools: string[] }) => Promise<AgentReceipt>;
+	run: (task: AgentTask) => Promise<AgentReceipt>;
 	readReceipt: (scope: Omit<AgentTask, "task">) => Promise<AgentReceipt | null>;
 	readFailure?: (scope: Omit<AgentTask, "task">) => Promise<string | null>;
 	readReservation?: (scope: Omit<AgentTask, "task">) => Promise<"pending" | "unknown" | null>;
@@ -90,7 +88,7 @@ export function createAgentTaskGateway(deps: AgentTaskGatewayDeps): { fetch: (re
 				return Response.json({ error: "Request already reserved; reconcile before retry" }, { status: 409 });
 			}
 			try {
-				const receipt = await deps.run({ ...scopedTask, allowedTools: [...READ_ONLY_TOOLS] });
+				const receipt = await deps.run(scopedTask);
 				return Response.json({ requestId: scopedTask.requestId, ...receipt,
 					ownerDelivery: "not_verified" });
 			} catch {
